@@ -1,4 +1,4 @@
-import  { useCallback, useState } from 'react'
+import { useCallback, useState } from 'react'
 import {
     Page,
     Layout,
@@ -11,13 +11,76 @@ import {
     Divider,
 } from "@shopify/polaris";
 import DashboardRow from './DashboardRow';
-import { leftCardTitle2, leftCard2, rightCard2 } from '../Common/SupportCommon'
-import { leftCardTitle1, leftCard1, rightCard1 } from '../Common/AppStatusCommon'
+// import { leftCardTitle2, leftCard2, rightCard2 } from '../Common/SupportCommon'
+// import { leftCardTitle1, leftCard1, rightCard1 } from '../Common/AppStatusCommon'
 
 const Index = () => {
+    const [enabled, setEnabled] = useState(true);
+    const badgeStatus = enabled ? "active" : "inactive";
+    const contentStatus = enabled ? "Turn Off" : "Turn On";
+    const handleToggle = useCallback(() => setEnabled((enabled) => !enabled), []);
 
+    // CARD-1
+    const leftCardTitle1 = 'App Status';
+    const leftCard1 = (
+        <p>Activate the compensation checkbox at the cart by enabling the app. If there are issues with the app and your theme, you can disable the app and contact us</p>
+    );
+    const rightCard1 = (
+        <HorizontalStack
+            gap="12"
+            align="space-between"
+            blockAlign="start"
+            wrap={true}
+        >
+            <HorizontalStack gap="2" align="start" blockAlign="baseline">
+                <label htmlFor={"setting-toggle-uuid"}>
+                    <p>
+                        Emissa app is <b>{badgeStatus}</b>
+                    </p>
+                </label>
+            </HorizontalStack>
+            <HorizontalStack align="end">
+                <Button
+                    destructive
+                    role="switch"
+                    id="setting-toggle-1"
+                    ariaChecked={enabled ? "true" : "false"}
+                    onClick={handleToggle}
+                    size="slim"
+                >
+                    {contentStatus}
+                </Button>
+            </HorizontalStack>
+        </HorizontalStack>
+    )
 
-
+    // CARD-2
+    const leftCardTitle2 = 'Support';
+    const leftCard2 = (
+        <p>In case you need help, you can contact our support</p>
+    );
+    const rightCard2 = (
+        <HorizontalStack
+            gap="12"
+            align="space-between"
+            blockAlign="start"
+            wrap={true}
+        >
+            <HorizontalStack gap="2" align="start" blockAlign="baseline">
+                <label htmlFor={"setting-toggle-2"}>
+                    <p>
+                        Need help?
+                    </p>
+                </label>
+            </HorizontalStack>
+            <HorizontalStack align="end">
+                <Button plain
+                >
+                    Contact Support
+                </Button>
+            </HorizontalStack>
+        </HorizontalStack>
+    )
 
 
 
@@ -55,8 +118,8 @@ const Index = () => {
     )
 
     const homeSections = [
-        [leftCardTitle1, <leftCard1 />, <rightCard1 />],
-        [leftCardTitle2, <leftCard2 />, <rightCard2 />],
+        [leftCardTitle1, leftCard1, rightCard1],
+        [leftCardTitle2, leftCard2, rightCard2],
         [leftCardTitle3, leftCard3, rightCard3],
     ]
 

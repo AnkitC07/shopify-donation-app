@@ -27,7 +27,7 @@ export const rightCard2 = (
     </HorizontalStack>
 )
 const SupportCommon = () => {
-    // CARD-2
+   
 
     return (
         <div>SupportCommon</div>
