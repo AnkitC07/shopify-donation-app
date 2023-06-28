@@ -21,17 +21,19 @@ const Index = () => {
     const cols = ["text", "text", "text", "numeric", "numeric"];
     return (
         <>
-            <Page fullWidth >
-                <div className="contribution_table" style={{ margin: '40px 0px', }}>
-                    <div className="header_table" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                        <Text variant="headingMd" alignment="start" as="h5">
-                            Billing History
-                        </Text>
-                        <Button primary>Export to CSV</Button>
+            <div className="container-fluid page_margin" >
+                <Page fullWidth >
+                    <div className="contribution_table" style={{ margin: '40px 0px', }}>
+                        <div className="header_table" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <Text variant="headingMd" alignment="start" as="h5">
+                                Billing History
+                            </Text>
+                            <Button primary>Export to CSV</Button>
+                        </div>
+                        <DataTableCommon rows={rows} headings={headings} cols={cols} />
                     </div>
-                    <DataTableCommon rows={rows} headings={headings} cols={cols} />
-                </div>
-            </Page>
+                </Page>
+            </div>
         </>
     )
 }

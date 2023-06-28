@@ -12,11 +12,11 @@ export default function HomePage() {
 
   const { t } = useTranslation();
   return (
-    <div className="container-fluid">
-      <Page fullWidth>
-        <TitleBar title={t("Emissa")} primaryAction={null} />
-        <HomeIndex />
-      </Page>
+    <div className="container-fluid page_margin" >
+      {/* <Page fullWidth> */}
+      <TitleBar title={t("Emissa")} primaryAction={null} />
+      <HomeIndex />
+      {/* </Page> */}
     </div>
   );
 }

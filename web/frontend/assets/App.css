@@ -10,3 +10,7 @@
 .common_table thead {
     background-color: #f9fafb;
 }
+
+.container-fluid.page_margin {
+    margin-top: 20px;
+}

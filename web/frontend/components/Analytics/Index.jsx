@@ -12,16 +12,18 @@ const Index = () => {
                 <Text variant="heading2xl" as="h3">
                     4032{' '}
                 </Text>
-                {' clicks'}
+                <span style={{ marginLeft: '4px', fontSize: '13px' }}>clicks</span>
+
             </div>
         ],
         ["Total Offset",
             'View report',
             <div style={{ display: 'flex', alignItems: 'baseline' }}>
                 <Text variant="heading2xl" as="h3">
-                    4032{' '}
+                    1.32 {' '}
                 </Text>
-                {' '}clicks
+                <span style={{ marginLeft: '4px', fontSize: '13px' }}>tons CO2</span>
+
             </div>
         ],
         ["To climate mitigation",
@@ -54,36 +56,38 @@ const Index = () => {
 
     return (
         <>
-            <Page fullWidth>
-                <Text variant="headingMd" alignment="start" as="h5">
-                    Your customer impact
-                </Text>
-                <div className="impact_cards" style={{ marginTop: '20px' }}>
-                    <div className="row">
-                        {
-                            impactCards.map(([title, button, text]) => (
-                                <div className="col-md-4">  {console.log(title)}
-                                    <LegacyCard sectioned title={title} actions={[{ content: button }]}>
-                                        {text}
-                                    </LegacyCard>
-                                </div>
-                            ))
-                        }
+            <div className="container-fluid page_margin" >
+                <Page fullWidth>
+                    <Text variant="headingMd" alignment="start" as="h5">
+                        Your customer impact
+                    </Text>
+                    <div className="impact_cards" style={{ marginTop: '10px' }}>
+                        <div className="row">
+                            {
+                                impactCards.map(([title, button, text]) => (
+                                    <div className="col-md-4" style={{ marginTop: '10px' }}>  {console.log(title)}
+                                        <LegacyCard sectioned title={title} actions={[{ content: button }]}>
+                                            {text}
+                                        </LegacyCard>
+                                    </div>
+                                ))
+                            }
+                        </div>
                     </div>
-                </div>
-                <div className="contribution_table" style={{ margin: '40px', }}>
-                    <div className="header_table" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                        <Text variant="headingMd" alignment="start" as="h5">
-                            Customer Footprint Contributions
-                        </Text>
-                        <Button primary>Export to CSV</Button>
+                    <div className="contribution_table" style={{ margin: '40px 0px', }}>
+                        <div className="header_table" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <Text variant="headingMd" alignment="start" as="h5">
+                                Customer Footprint Contributions
+                            </Text>
+                            <Button primary>Export to CSV</Button>
+                        </div>
+                        <DataTableCommon rows={rows} headings={headings} cols={cols} />
                     </div>
-                    <DataTableCommon rows={rows} headings={headings} cols={cols} />
-                </div>
-                <div className="collected_contribution">
+                    <div className="collected_contribution">
 
-                </div>
-            </Page>
+                    </div>
+                </Page>
+            </div>
         </>
     )
 }

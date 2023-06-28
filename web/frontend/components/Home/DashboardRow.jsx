@@ -2,7 +2,7 @@ import { AlphaCard, Divider, Layout, LegacyCard } from '@shopify/polaris'
 import React from 'react'
 
 const DashboardRow = ({ rowData }) => {
-    const [leftCardTitle, leftCard, rightCard,] = rowData
+    const [leftCardTitle, leftCard, RightCard,] = rowData
     return (
         <>
             {/* <Layout.Section> */}
@@ -18,7 +18,8 @@ const DashboardRow = ({ rowData }) => {
                     <div className="col-md-6">
                         <div className="right-card-layout">
                             <AlphaCard>
-                                {rightCard}
+                                {console.log(RightCard)}
+                                <RightCard />
                             </AlphaCard>
                         </div>
                     </div>

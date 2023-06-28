@@ -2,6 +2,7 @@ import { Routes as ReactRouterRoutes, Route } from "react-router-dom";
 import AnalyticsIndex from "./components/Analytics/Index";
 import BillingHistoryIndex from "./components/BillingHisotry/Index";
 import ProductFootprintsIndex from "./components/ProductFootprint/Index";
+import SettingsIndex from "./components/Settings/Index";
 
 
 /**
@@ -33,6 +34,7 @@ export default function Routes({ pages }) {
       <Route path="/analytics" element={<AnalyticsIndex />} />
       <Route path="/productFootprints" element={<ProductFootprintsIndex />} />
       <Route path="/billingHistory" element={<BillingHistoryIndex />} />
+      <Route path="/settings" element={<SettingsIndex />} />
     </ReactRouterRoutes>
   );
 }
