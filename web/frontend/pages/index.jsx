@@ -14,7 +14,7 @@ export default function HomePage() {
   return (
     <div className="container-fluid page_margin" >
       {/* <Page fullWidth> */}
-      <TitleBar title={t("Emissa")} primaryAction={null} />
+      {/* <TitleBar title={t("Emissa")} primaryAction={null} /> */}
       <HomeIndex />
       {/* </Page> */}
     </div>

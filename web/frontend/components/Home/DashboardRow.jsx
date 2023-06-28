@@ -18,7 +18,6 @@ const DashboardRow = ({ rowData }) => {
                     <div className="col-md-6">
                         <div className="right-card-layout">
                             <AlphaCard>
-                                {console.log(RightCard)}
                                 <RightCard />
                             </AlphaCard>
                         </div>

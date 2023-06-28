@@ -23,7 +23,7 @@ const Index = () => {
         <>
             <div className="container-fluid page_margin" >
                 <Page fullWidth >
-                    <div className="contribution_table" style={{ margin: '40px 0px', }}>
+                    <div className="contribution_table" >
                         <div className="header_table" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                             <Text variant="headingMd" alignment="start" as="h5">
                                 Billing History

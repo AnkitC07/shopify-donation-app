@@ -1,8 +1,9 @@
-import { Button, LegacyCard, Page, Text } from '@shopify/polaris'
-import React from 'react'
+import { Button, DataTable, Divider, LegacyCard, Page, Pagination, Select, Text } from '@shopify/polaris'
+import React, { useCallback, useState } from 'react'
 import DataTableCommon from '../Common/DataTableCommon'
 
 const Index = () => {
+    const [selected, setSelected] = useState('today');
 
     // Top Cards
     const impactCards = [
@@ -54,6 +55,21 @@ const Index = () => {
     ];
     const cols = ["text", "numeric", "numeric", "numeric", "numeric"];
 
+    // Second table Data
+    const rows2 = [
+
+    ]
+
+    const handleSelectChange = useCallback((value) =>
+        setSelected(value),
+        [],);
+
+    const options = [
+        { label: 'Period', value: 'period' },
+        { label: 'Yesterday', value: 'yesterday' },
+        { label: 'Last 7 days', value: 'lastWeek' },
+    ];
+
     return (
         <>
             <div className="container-fluid page_margin" >
@@ -83,8 +99,65 @@ const Index = () => {
                         </div>
                         <DataTableCommon rows={rows} headings={headings} cols={cols} />
                     </div>
-                    <div className="collected_contribution">
+                    <div className="collected_contribution" style={{ backgroundColor: '#f9fafb', marginBottom: '30px' }}>
 
+                        <LegacyCard>
+                            <div className=" table2_top" style={{ margin: '0px 15px', padding: '15px 0px', display: 'flex', alignItems: 'center' }}>
+                                <div className='col-sm-6'>
+                                    <Text variant="headingMd" as="h2">
+                                        Collected Contributions
+                                    </Text>
+                                </div>
+                                <div className="col-sm-6">
+                                    <Select
+                                        options={options}
+                                        onChange={handleSelectChange}
+                                        value={selected}
+                                    />
+                                </div>
+
+                            </div>
+                            <Divider />
+                            <DataTable
+                                columnContentTypes={[
+                                    'text',
+                                    'numeric',
+                                    'numeric',
+                                    'numeric',
+                                    'numeric',
+                                    'numeric',
+                                ]}
+                                headings={[
+                                    'Orders',
+                                    'Customer Name',
+                                    'Customer Email',
+                                    'Offset Amount',
+                                    'Project',
+                                    'Date Purchase',
+                                ]}
+                                rows={rows2}
+                            />
+                            {rows2.length <= 0 && (
+                                <div style={{ height: '350px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                    <Text variant="headingMd" fontWeight='medium' as="h4">
+                                        No matching offsets found
+                                    </Text>
+                                </div>
+                            )}
+                        </LegacyCard>
+                        <div style={{ padding: '25px', display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+                            <Pagination
+                                hasPrevious
+                                onPrevious={() => {
+                                    console.log('Previous');
+                                }}
+                                hasNext
+                                onNext={() => {
+                                    console.log('Next');
+                                }}
+                            />
+                            <span>Page 1 of 1 pages</span>
+                        </div>
                     </div>
                 </Page>
             </div>

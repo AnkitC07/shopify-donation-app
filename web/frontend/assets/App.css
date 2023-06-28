@@ -14,3 +14,8 @@
 .container-fluid.page_margin {
     margin-top: 20px;
 }
+
+.collected_contribution .Polaris-LegacyCard {
+    border-radius: 0px;
+    box-shadow: 0rem -0.0125rem 0.25rem rgba(31, 33, 36, 0.1);
+}

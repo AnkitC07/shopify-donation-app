@@ -102,7 +102,7 @@ const Index = () => {
         <>
             <Page fullWidth>
                 <Text variant="headingXl" alignment="start" as="h4">
-                    Your customer impact
+                    Emissa dashboard overview
                 </Text>
                 <div className="home-pageWrapper" style={{ marginTop: '20px' }}>
                     <Layout >
