@@ -36,7 +36,8 @@
             </div>
             <div class="check_custom" style="display: flex; align-items: center;">
                 <span style="font-size: 12px;text-align: right;">€0.68</span>
-                <input type="checkbox" name="footprint" id="reduce" style=" accent-color: #5a9d76;margin-left: 5px;height: 24px;width: 15px;">
+                <input type="checkbox" name="footprint" id="reduce"
+                    style=" accent-color: #5a9d76;margin-left: 5px;height: 24px;width: 15px;" onclick="test()">
             </div>
         </div>
     </div>
@@ -49,5 +50,10 @@
         width: 15px;
     } */
 </style>
+<script>
+    const test = () => {
+        console.log('first')
+    }
+</script>
 
 </html>

@@ -83,4 +83,13 @@ export default {
       // }
     },
   },
+  ORDERS_CREATE: {
+    deliveryMethod: DeliveryMethod.Http,
+    callbackUrl: "/api/webhooks",
+    callback: async (topic, shop, body, webhookId) => {
+      const payload = JSON.parse(body);
+      console.log('Order update webhook paylaod', payload)
+      // console.log('Order update webhook items', payload.line_items)
+    },
+  },
 };

@@ -1,5 +1,6 @@
 import { Button, DataTable, Divider, LegacyCard, Page, Pagination, Select, Text } from '@shopify/polaris'
 import React, { useCallback, useState } from 'react'
+import { NavLink } from 'react-router-dom';
 import DataTableCommon from '../Common/DataTableCommon'
 
 const Index = () => {
@@ -82,7 +83,7 @@ const Index = () => {
                             {
                                 impactCards.map(([title, button, text]) => (
                                     <div className="col-md-4" style={{ marginTop: '10px' }}>  {console.log(title)}
-                                        <LegacyCard sectioned title={title} actions={[{ content: button }]}>
+                                        <LegacyCard sectioned title={title} actions={[{ content: <NavLink to='/productFootprints' style={{ color: '#2463bc' }}> {button} </NavLink> }]}>
                                             {text}
                                         </LegacyCard>
                                     </div>
