@@ -10,6 +10,7 @@ import { NavLink } from 'react-router-dom';
 import DashboardRow from './DashboardRow';
 import { leftCardTitle2, leftCard2, RightCard2 } from '../Common/SupportCommon'
 import { leftCardTitle1, leftCard1, RightCard1 } from '../Common/AppStatusCommon'
+import { PaidFeature } from './PaidFeature';
 
 
 const Index = () => {
@@ -33,6 +34,7 @@ const Index = () => {
                 <Text variant="headingXl" alignment="start" as="h4">
                     Emissa dashboard overview
                 </Text>
+                <PaidFeature />
                 <div className="home-pageWrapper" style={{ marginTop: '20px' }}>
                     <Layout >
                         {

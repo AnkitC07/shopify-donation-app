@@ -1,5 +1,7 @@
 
 import { GraphqlQueryError, BillingInterval } from "@shopify/shopify-api";
+import { updateId } from "./model/Controller/store.js";
+import Stores from "./model/Stores.js";
 import shopify from "./shopify.js";
 
 const USAGE_CHARGE_INCREMENT_AMOUNT = 1.0;
@@ -88,8 +90,17 @@ query appSubscription {
  * querying the API for it here.
  */
 export async function createUsageRecord(session) {
+
     const client = new shopify.api.clients.Graphql({ session });
-    const subscriptionLineItem = await getAppSubscription(session);
+    const findShop = await Stores.findOne({ storename: session.shop });
+    let subscriptionLineItem;
+    if (findShop.sub === '' || findShop.sub == null) {
+        subscriptionLineItem = await getAppSubscription(session);
+        updateId(session.shop, subscriptionLineItem)
+    } else {
+        console.log('first')
+        subscriptionLineItem = findShop.sub
+    }
     console.log('subscription=>', subscriptionLineItem);
     const plan = Object.keys(billingConfig)[0];
     const res = {
@@ -110,7 +121,7 @@ export async function createUsageRecord(session) {
 
     try {
         // This makes an API call to Shopify to create a usage record
-        await client.query({
+        const temp = await client.query({
             data: {
                 query: CREATE_USAGE_RECORD,
                 variables: {
@@ -120,6 +131,7 @@ export async function createUsageRecord(session) {
                 },
             },
         });
+        console.log("checking=>", temp.body.data)
         res.createdRecord = true;
     } catch (error) {
         if (error instanceof GraphqlQueryError) {
@@ -145,7 +157,7 @@ export async function createUsageRecord(session) {
  * plan name and usage terms. You may want to store this ID in your database, but
  * for simplicity, we are querying the API for it here.
  */
-async function getAppSubscription(session) {
+export async function getAppSubscription(session) {
     const client = new shopify.api.clients.Graphql({ session });
     let subscriptionLineItem = {};
     const planName = Object.keys(billingConfig)[0];

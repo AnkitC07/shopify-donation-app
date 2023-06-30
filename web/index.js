@@ -4,11 +4,13 @@ import { readFileSync } from "fs";
 import express from "express";
 import cors from 'cors'
 import serveStatic from "serve-static";
-
+import '../web/database/config.js'
 import shopify from "./shopify.js";
 import productCreator from "./product-creator.js";
 import GDPRWebhookHandlers from "./gdpr.js";
-import { billingConfig, createUsageRecord } from "./billing.js";
+import { billingConfig, createUsageRecord, getAppSubscription } from "./billing.js";
+import addStore from "./model/Controller/store.js";
+import Stores from "./model/Stores.js";
 
 
 const PORT = parseInt(
@@ -37,18 +39,23 @@ app.get(
       plans: plans,
       isTest: true,
     });
-
+    addStore(session.shop, session.accessToken)
+    console.log('start checking has payment=>', hasPayment)
     if (hasPayment) {
       next();
     } else {
-      res.redirect(
-        await shopify.api.billing.request({
-          session,
-          plan: plans[0],
-          isTest: true,
-        }),
-      );
+      const billingResponse = await shopify.api.billing.request({
+        session,
+        plan: plans[0],
+        isTest: true,
+        returnObject: true,
+      });
+      console.log('start billingResponse=>', billingResponse)
+      const subscriptionLineItem = await getAppSubscription(session);
+      console.log('start subid=>', subscriptionLineItem)
+      res.redirect(billingResponse.confirmationUrl);
     }
+
   },
   shopify.redirectToShopifyOrAppRoot()
 );
@@ -59,16 +66,63 @@ app.post(
 // app.use(express.json());
 // app.use(cors())
 
+// Create Usage Records
+app.get("/api/usage", async (_req, res) => {
+  console.log('hitted', _req.query.shop)
+
+  res.setHeader("Access-Control-Allow-Origin", `*`);
+  const shop = _req.query.shop;
+  let status = 200;
+  let error = null;
+  let resp = null;
+  let capacityReached = false;
+  let session = {
+    shop: shop,
+    accessToken: ''
+  }
+
+  try {
+    const findShop = await Stores.findOne({ storename: shop });
+    session.accessToken = findShop?.storetoken;
+    console.log("session=>", session)
+    resp = await createUsageRecord(session);
+    capacityReached = resp.capacityReached;
+    if (capacityReached && !resp.createdRecord) {
+      error = "Could not create record because capacity was reached";
+      status = 400;
+    }
+  } catch (e) {
+    console.log(`Failed to process usage/create: ${e.message}`);
+    status = 500;
+    error = e.message;
+  }
+  res
+    .status(status)
+    .send({ success: status === 200, capacityReach: capacityReached, error });
+  // res.status(200)
+});
 
 
-// app.get("/api/usage/create", async (_req, res) => {
+
+
+// If you are adding routes outside of the /api path, remember to
+// also add a proxy rule for them in web/frontend/vite.config.js
+
+app.use("/api/*", shopify.validateAuthenticatedSession());
+
+app.use(express.json());
+
+
+// // Create Usage Records
+// app.get("/api/usage", async (_req, res) => {
+//   console.log('hitted')
+//   // res.setHeader("Access-Control-Allow-Origin", `*`);
 //   let status = 200;
 //   let error = null;
 //   let resp = null;
 //   let capacityReached = false;
 
 //   try {
-//     res.setHeader("Access-Control-Allow-Origin", `*`);
 //     resp = await createUsageRecord(res.locals.shopify.session);
 //     capacityReached = resp.capacityReached;
 //     if (capacityReached && !resp.createdRecord) {
@@ -83,18 +137,8 @@ app.post(
 //   res
 //     .status(status)
 //     .send({ success: status === 200, capacityReach: capacityReached, error });
+//   // res.status(200)e
 // });
-
-// If you are adding routes outside of the /api path, remember to
-// also add a proxy rule for them in web/frontend/vite.config.js
-
-app.use("/api/*", shopify.validateAuthenticatedSession());
-
-app.use(express.json());
-
-
-// Create Usage Records
-
 
 
 
