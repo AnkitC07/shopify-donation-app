@@ -137,8 +137,24 @@ app.use(express.json());
 //   res
 //     .status(status)
 //     .send({ success: status === 200, capacityReach: capacityReached, error });
-//   // res.status(200)e
+//   // res.status(200)
 // });
+
+// Change App Status
+app.get("/api/appStatus", async (_req, res) => {
+  let status = 200;
+  let error = null;
+  let appStatus = _req.body;
+  try {
+    console.log('app status hit', appStatus)
+  } catch (e) {
+    console.log(`Failed to Change app status: ${e.message}`);
+    status = 500;
+    error = e.message;
+  }
+
+  res.status(200).send({ status: status === 200, error })
+})
 
 
 

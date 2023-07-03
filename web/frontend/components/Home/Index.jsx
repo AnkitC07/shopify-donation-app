@@ -4,6 +4,8 @@ import {
     Layout,
     Text,
     Button,
+    TextField,
+    AlphaCard,
 } from "@shopify/polaris";
 import { NavLink } from 'react-router-dom';
 
@@ -21,9 +23,16 @@ const Index = () => {
         <p>All charges will appear on your normal Shopity bill, and will be paid through Shopify on a 30-day cycle</p>
     );
 
+    // Card-4
+    const leftCardTitle4 = 'Activation key';
+    const leftCard4 = (
+        <p>In order to use the Emissa App you need to obtain a activation key for you store. Contact info@emissa.eu to receive your personal key.</p>
+    );
+
 
     const homeSections = [
         [leftCardTitle1, leftCard1, RightCard1],
+        [leftCardTitle4, leftCard4, RightCard4],
         [leftCardTitle2, leftCard2, RightCard2],
         [leftCardTitle3, leftCard3, RightCard3],
     ]
@@ -34,7 +43,7 @@ const Index = () => {
                 <Text variant="headingXl" alignment="start" as="h4">
                     Emissa dashboard overview
                 </Text>
-                <PaidFeature />
+                {/* <PaidFeature /> */}
                 <div className="home-pageWrapper" style={{ marginTop: '20px' }}>
                     <Layout >
                         {
@@ -55,37 +64,59 @@ const Index = () => {
 const RightCard3 = () => {
 
     return (
-        <div className="card3Wrapper">
-            <div className="planName">
-                <p><b>Account plan: </b>FREEMIUM</p>
-            </div>
-            <br />
-            <p>You will be charged for the contribution you collected on behalf of your customers through the Emissa app</p>
-            <br />
-            <p>In addition, a 25% usage fee will be charged on top of each contribution</p>
-            <br />
-            <div>
-                <p style={{ display: 'flex', gap: '10px' }}>
-                    <span>
-                        <NavLink to="/billingHistory">
+        <AlphaCard>
+            <div className="card3Wrapper">
+                <div className="planName">
+                    <p><b>Account plan: </b>FREEMIUM</p>
+                </div>
+                <br />
+                <p>You will be charged for the contribution you collected on behalf of your customers through the Emissa app</p>
+                <br />
+                <p>In addition, a 25% usage fee will be charged on top of each contribution</p>
+                <br />
+                <div>
+                    <p style={{ display: 'flex', gap: '10px' }}>
+                        <span>
+                            <NavLink to="/billingHistory">
 
-                            <Button plain>
-                                Billing history
-                            </Button>
-                        </NavLink>
-                    </span>
-                    {' '}
-                    <span>
-                        <NavLink to="/analytics">
-                            <Button plain>
-                                Contributions
-                            </Button>
-                        </NavLink>
-                    </span>
-                </p>
+                                <Button plain>
+                                    Billing history
+                                </Button>
+                            </NavLink>
+                        </span>
+                        {' '}
+                        <span>
+                            <NavLink to="/analytics">
+                                <Button plain>
+                                    Contributions
+                                </Button>
+                            </NavLink>
+                        </span>
+                    </p>
+                </div>
             </div>
-        </div>
+        </AlphaCard>
     )
 }
+const RightCard4 = () => {
+    const [value, setValue] = useState('');
+    const handleChange = useCallback(
+        (newValue) => setValue(newValue),
+        [],
+    );
+    return (
+        <AlphaCard>
+            <TextField
+                type="password"
+                placeholder="Password"
+                value={value}
+                onChange={handleChange}
+                autoComplete="off"
+            />
+        </AlphaCard>
+    )
+}
+
+
 
 export default Index
