@@ -9,9 +9,21 @@ import shopify from "./shopify.js";
 import productCreator from "./product-creator.js";
 import GDPRWebhookHandlers from "./gdpr.js";
 import { billingConfig, createUsageRecord, getAppSubscription } from "./billing.js";
-import addStore from "./model/Controller/store.js";
+import addStore, { updateAppStatus, updateHtml } from "./model/Controller/store.js";
 import Stores from "./model/Stores.js";
+import { addProduct } from "./Product/product.js";
 
+
+
+
+const addSessionShopToReqParams = (req, res, next) => {
+  const shop = res.locals?.shopify?.session?.shop;
+  if (shop && !req.query.shop) {
+    req.query.shop = shop;
+  }
+  console.log('SHOP:', shop, req.query.shop);
+  return next();
+}
 
 const PORT = parseInt(
   process.env.BACKEND_PORT || process.env.PORT || "3000",
@@ -39,7 +51,8 @@ app.get(
       plans: plans,
       isTest: true,
     });
-    addStore(session.shop, session.accessToken)
+    await addStore(session.shop, session.accessToken)
+    await addProduct(session)
     console.log('start checking has payment=>', hasPayment)
     if (hasPayment) {
       next();
@@ -66,40 +79,67 @@ app.post(
 // app.use(express.json());
 // app.use(cors())
 
+
+
+
+app.get("/api/getAppStatus", async (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", `*`);
+  const shop = req.query.shop;
+  const responseBody = {
+    appStatus: false,
+    html: '',
+    status: 400,
+  }
+  try {
+    const findShop = await Stores.findOne({ storename: shop })
+    responseBody.appStatus = findShop?.appStatus;
+    if (findShop?.appStatus) {
+      responseBody.status = 200;
+      responseBody.html = findShop?.html;
+    }
+    res.status(200).json(responseBody)
+    return;
+  } catch (error) {
+    console.log(error)
+    responseBody.status = 400;
+    res.status(400).json(responseBody)
+    return;
+  }
+})
+
 // Create Usage Records
 app.get("/api/usage", async (_req, res) => {
   console.log('hitted', _req.query.shop)
 
-  res.setHeader("Access-Control-Allow-Origin", `*`);
-  const shop = _req.query.shop;
-  let status = 200;
-  let error = null;
-  let resp = null;
-  let capacityReached = false;
-  let session = {
-    shop: shop,
-    accessToken: ''
-  }
 
-  try {
-    const findShop = await Stores.findOne({ storename: shop });
-    session.accessToken = findShop?.storetoken;
-    console.log("session=>", session)
-    resp = await createUsageRecord(session);
-    capacityReached = resp.capacityReached;
-    if (capacityReached && !resp.createdRecord) {
-      error = "Could not create record because capacity was reached";
-      status = 400;
-    }
-  } catch (e) {
-    console.log(`Failed to process usage/create: ${e.message}`);
-    status = 500;
-    error = e.message;
-  }
-  res
-    .status(status)
-    .send({ success: status === 200, capacityReach: capacityReached, error });
-  // res.status(200)
+  // let status = 200;
+  // let error = null;
+  // let resp = null;
+  // let capacityReached = false;
+  // let session = {
+  //   shop: shop,
+  //   accessToken: ''
+  // }
+
+  // try {
+  //   const findShop = await Stores.findOne({ storename: shop });
+  //   session.accessToken = findShop?.storetoken;
+  //   console.log("session=>", session)
+  //   resp = await createUsageRecord(session);
+  //   capacityReached = resp.capacityReached;
+  //   if (capacityReached && !resp.createdRecord) {
+  //     error = "Could not create record because capacity was reached";
+  //     status = 400;
+  //   }
+  // } catch (e) {
+  //   console.log(`Failed to process usage/create: ${e.message}`);
+  //   status = 500;
+  //   error = e.message;
+  // }
+  // res
+  //   .status(status)
+  //   .send({ success: status === 200, capacityReach: capacityReached, error });
+  res.status(200)
 });
 
 
@@ -109,6 +149,7 @@ app.get("/api/usage", async (_req, res) => {
 // also add a proxy rule for them in web/frontend/vite.config.js
 
 app.use("/api/*", shopify.validateAuthenticatedSession());
+app.use("/*", addSessionShopToReqParams);
 
 app.use(express.json());
 
@@ -144,17 +185,57 @@ app.use(express.json());
 app.get("/api/appStatus", async (_req, res) => {
   let status = 200;
   let error = null;
-  let appStatus = _req.body;
+  let appStatus = _req.query.status;
   try {
-    console.log('app status hit', appStatus)
+    console.log('App Status hit=>', appStatus)
+    updateAppStatus(res.locals.shopify.session.shop, appStatus)
   } catch (e) {
     console.log(`Failed to Change app status: ${e.message}`);
     status = 500;
     error = e.message;
   }
-
   res.status(200).send({ status: status === 200, error })
 })
+
+// Save Html
+app.post("/api/saveHtml", async (_req, res) => {
+  let status = 200;
+  let error = null;
+  const html = _req.body.html;
+  const design = _req.body.design;
+  try {
+    updateHtml(res.locals.shopify.session.shop, html, design)
+  } catch (e) {
+    console.log(`Failed to Change app status: ${e.message}`);
+    status = 500;
+    error = e.message;
+  }
+  res.status(200).send({ status: status === 200, error })
+})
+
+
+// Get all details of store and blocks
+app.get("/api/getStoreData", async (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  try {
+    const session = res.locals.shopify.session;
+    let findshop;
+    // check if app is installing for first time
+    findshop = await Stores.findOne({
+      storename: session.shop,
+    });
+    if (findshop == null || findshop == undefined) {
+      findshop = await addStore(session.shop, session.accessToken);
+    }
+    // console.log("StoreData=> ", findshop)
+
+    res.status(200).json({ status: 200, data: findshop });
+  } catch (err) {
+    console.log(err);
+    res.status(200).json({ status: 400, Error: err });
+  }
+});
+
 
 
 

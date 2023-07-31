@@ -9,6 +9,8 @@ import {
   QueryProvider,
   PolarisProvider,
 } from "./components";
+import { MainContextProvider } from "./context/MainContext";
+import AppStart from "./AppStart";
 
 export default function App() {
   // Any .tsx or .jsx files in /pages will become a route
@@ -17,38 +19,41 @@ export default function App() {
   const { t } = useTranslation();
 
   return (
-    <PolarisProvider>
-      <BrowserRouter>
-        <AppBridgeProvider>
-          <QueryProvider>
-            <NavigationMenu
-              navigationLinks={[
-                {
-                  label: t("Home"),
-                  destination: "/",
-                },
-                {
-                  label: t("Analytics"),
-                  destination: "/analytics",
-                },
-                {
-                  label: t("Settings"),
-                  destination: "/settings",
-                },
-                {
-                  label: t("Product Footprints"),
-                  destination: "/productFootprints",
-                },
-                {
-                  label: t("Billing History"),
-                  destination: "/billingHistory",
-                },
-              ]}
-            />
-            <Routes pages={pages} />
-          </QueryProvider>
-        </AppBridgeProvider>
-      </BrowserRouter>
-    </PolarisProvider>
+    <MainContextProvider>
+      <PolarisProvider>
+        <BrowserRouter>
+          <AppBridgeProvider>
+            <QueryProvider>
+              <NavigationMenu
+                navigationLinks={[
+                  {
+                    label: t("Home"),
+                    destination: "/",
+                  },
+                  {
+                    label: t("Analytics"),
+                    destination: "/analytics",
+                  },
+                  {
+                    label: t("Settings"),
+                    destination: "/settings",
+                  },
+                  {
+                    label: t("Product Footprints"),
+                    destination: "/productFootprints",
+                  },
+                  {
+                    label: t("Billing History"),
+                    destination: "/billingHistory",
+                  },
+                ]}
+              />
+              <Routes pages={pages} />
+              <AppStart />
+            </QueryProvider>
+          </AppBridgeProvider>
+        </BrowserRouter>
+      </PolarisProvider>
+    </MainContextProvider>
   );
 }

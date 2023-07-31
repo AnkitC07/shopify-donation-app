@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useContext, useState } from 'react'
 import {
     Page,
     Layout,
@@ -13,6 +13,7 @@ import DashboardRow from './DashboardRow';
 import { leftCardTitle2, leftCard2, RightCard2 } from '../Common/SupportCommon'
 import { leftCardTitle1, leftCard1, RightCard1 } from '../Common/AppStatusCommon'
 import { PaidFeature } from './PaidFeature';
+import { MainContext } from '../../context/MainContext';
 
 
 const Index = () => {
@@ -99,9 +100,9 @@ const RightCard3 = () => {
     )
 }
 const RightCard4 = () => {
-    const [value, setValue] = useState('');
+    const { password, setPassword, } = useContext(MainContext);
     const handleChange = useCallback(
-        (newValue) => setValue(newValue),
+        (newValue) => setPassword(newValue),
         [],
     );
     return (
@@ -109,7 +110,7 @@ const RightCard4 = () => {
             <TextField
                 type="password"
                 placeholder="Password"
-                value={value}
+                value={password}
                 onChange={handleChange}
                 autoComplete="off"
             />
