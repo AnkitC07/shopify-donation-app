@@ -3,6 +3,8 @@ import { dirname } from "path";
 import { fileURLToPath } from "url";
 import https from "https";
 import react from "@vitejs/plugin-react";
+import dotenv from 'dotenv';
+dotenv.config();
 
 if (
   process.env.npm_lifecycle_event === "build" &&

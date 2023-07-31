@@ -2,16 +2,21 @@
 import { join } from "path";
 import { readFileSync } from "fs";
 import express from "express";
-import cors from 'cors'
+import cors from "cors";
 import serveStatic from "serve-static";
-import '../web/database/config.js'
+import "../web/database/config.js";
 import shopify from "./shopify.js";
 import productCreator from "./product-creator.js";
 import GDPRWebhookHandlers from "./gdpr.js";
-import { billingConfig, createUsageRecord, getAppSubscription } from "./billing.js";
+import {
+  billingConfig,
+  createUsageRecord,
+  getAppSubscription,
+} from "./billing.js";
 import addStore from "./model/Controller/store.js";
 import Stores from "./model/Stores.js";
-
+import metafield from "./metafieldsConfig.js";
+import EI from "./routes/exportImportPro.js";
 
 const PORT = parseInt(
   process.env.BACKEND_PORT || process.env.PORT || "3000",
@@ -25,6 +30,35 @@ const STATIC_PATH =
 
 const app = express();
 
+async function customDataMetafields(session) {
+  // const client = new shopify.api.clients.Rest({ session });
+  const client = new shopify.api.clients.Graphql({ session });
+  // const client = new shopify.clients.Graphql({session});
+  const data = await client.query({
+    data: {
+      query:
+        `mutation CreateMetafieldDefinition($definition: MetafieldDefinitionInput!) {
+          metafieldDefinitionCreate(definition: $definition) {
+            createdDefinition {
+              id
+              name
+              namespace
+              key
+            }
+            userErrors {
+              field
+              message
+              code
+            }
+          }
+        }`,
+      variables: {
+        definition: metafield.definition,
+      },
+    },
+  });
+  return data;
+}
 // Set up Shopify authentication and webhook handling
 app.get(shopify.config.auth.path, shopify.auth.begin());
 app.get(
@@ -39,8 +73,8 @@ app.get(
       plans: plans,
       isTest: true,
     });
-    addStore(session.shop, session.accessToken)
-    console.log('start checking has payment=>', hasPayment)
+    addStore(session.shop, session.accessToken);
+    console.log("start checking has payment=>", hasPayment);
     if (hasPayment) {
       next();
     } else {
@@ -50,12 +84,12 @@ app.get(
         isTest: true,
         returnObject: true,
       });
-      console.log('start billingResponse=>', billingResponse)
+      console.log("start billingResponse=>", billingResponse);
       const subscriptionLineItem = await getAppSubscription(session);
-      console.log('start subid=>', subscriptionLineItem)
+      await customDataMetafields(session);
+      console.log("start subid=>", subscriptionLineItem);
       res.redirect(billingResponse.confirmationUrl);
     }
-
   },
   shopify.redirectToShopifyOrAppRoot()
 );
@@ -68,7 +102,7 @@ app.post(
 
 // Create Usage Records
 app.get("/api/usage", async (_req, res) => {
-  console.log('hitted', _req.query.shop)
+  console.log("hitted", _req.query.shop);
 
   res.setHeader("Access-Control-Allow-Origin", `*`);
   const shop = _req.query.shop;
@@ -78,13 +112,13 @@ app.get("/api/usage", async (_req, res) => {
   let capacityReached = false;
   let session = {
     shop: shop,
-    accessToken: ''
-  }
+    accessToken: "",
+  };
 
   try {
     const findShop = await Stores.findOne({ storename: shop });
     session.accessToken = findShop?.storetoken;
-    console.log("session=>", session)
+    console.log("session=>", session);
     resp = await createUsageRecord(session);
     capacityReached = resp.capacityReached;
     if (capacityReached && !resp.createdRecord) {
@@ -102,16 +136,12 @@ app.get("/api/usage", async (_req, res) => {
   // res.status(200)
 });
 
-
-
-
 // If you are adding routes outside of the /api path, remember to
 // also add a proxy rule for them in web/frontend/vite.config.js
 
 app.use("/api/*", shopify.validateAuthenticatedSession());
 
 app.use(express.json());
-
 
 // // Create Usage Records
 // app.get("/api/usage", async (_req, res) => {
@@ -141,22 +171,22 @@ app.use(express.json());
 // });
 
 // Change App Status
+
+app.use('/api',EI)
 app.get("/api/appStatus", async (_req, res) => {
   let status = 200;
   let error = null;
   let appStatus = _req.body;
   try {
-    console.log('app status hit', appStatus)
+    console.log("app status hit", appStatus);
   } catch (e) {
     console.log(`Failed to Change app status: ${e.message}`);
     status = 500;
     error = e.message;
   }
 
-  res.status(200).send({ status: status === 200, error })
-})
-
-
+  res.status(200).send({ status: status === 200, error });
+});
 
 app.get("/api/products/count", async (_req, res) => {
   const countData = await shopify.api.rest.Product.count({
