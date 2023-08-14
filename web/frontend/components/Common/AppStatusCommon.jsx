@@ -1,6 +1,8 @@
-import { AlphaCard, Button, HorizontalStack, Toast } from '@shopify/polaris';
-import { useCallback, useState } from 'react'
+import { AlphaCard, Button, HorizontalStack } from '@shopify/polaris';
+import { useCallback, useContext, useState } from 'react'
+import { Toast } from "@shopify/app-bridge-react";
 import { useAuthenticatedFetch } from "../../hooks/useAuthenticatedFetch.js";
+import { MainContext } from '../../context/MainContext.jsx';
 
 
 
@@ -13,32 +15,37 @@ export const leftCard1 = (
     <p>Activate the compensation checkbox at the cart by enabling the app. If there are issues with the app and your theme, you can disable the app and contact us</p>
 );
 export const RightCard1 = () => {
+    const { enabled, setEnabled } = useContext(MainContext);
     const fetch = useAuthenticatedFetch();
-    const [enabled, setEnabled] = useState(true);
+    // const [enabled, setEnabled] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [toastProps, setToastProps] = useState({ content: null });
     const toastMarkup = toastProps.content && (
         <Toast {...toastProps} onDismiss={() => setToastProps({ content: null })} />
     );
 
-    const handleToggle = useCallback(async () => {
-        setEnabled((enabled) => !enabled)
-        // let response
-        // try {
-        //     response = await fetch(`/api/appStatus?status=${!enabled}`);
-        //     console.log(response)
-        // } catch (error) {
-        //     console.log(error)
-        // }
+    const handleToggle = useCallback(async (flag) => {
+        setIsLoading(true);
+        // setEnabled((enabled) => !enabled)
+        let response
+        try {
+            console.log('apps Status: ', flag)
+            response = await fetch(`/api/appStatus?status=${!flag}`);
+            console.log(response)
+            setIsLoading(false);
+        } catch (error) {
+            console.log(error)
+        }
 
-        // if (response.ok) {
-        //     setToastProps({ content: "App Status Changed!" });
-        //     setEnabled((enabled) => !enabled)
-        // } else {
-        //     setToastProps({
-        //         content: "There was an error changing app status",
-        //         error: true,
-        //     });
-        // }
+        if (response.ok) {
+            setToastProps({ content: "App Status Changed!" });
+            setEnabled((enabled) => !enabled)
+        } else {
+            setToastProps({
+                content: "There was an error changing app status",
+                error: true,
+            });
+        }
 
 
     }, []);
@@ -66,7 +73,8 @@ export const RightCard1 = () => {
                             role="switch"
                             id="setting-toggle-1"
                             ariaChecked={enabled ? "true" : "false"}
-                            onClick={handleToggle}
+                            onClick={() => handleToggle(enabled)}
+                            loading={isLoading}
                         // size="slim"
                         >
                             {enabled ? "Deactivate" : "Activate"}

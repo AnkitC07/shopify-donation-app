@@ -1,14 +1,88 @@
-import shopify from "../shopify.js"
+import shopify from "../shopify.js";
 
-export const exportProducts = async (req,res) =>{
-    const session = res.locals.shopify.session;
-    const products = await shopify.api.rest.Product.all({session,limit:10,since_id:req.query.since_id})
-    const count = await shopify.api.rest.Product.count({session})
-    const data = products.data.map(x=>{
-        const dataVal = x.variants.map(v=>{
-            return {title:`${x.title} ${v.title}`,product_id:x.id.toString(),variant_id:v.id.toString(),price:v.price}
-        })
-        return dataVal
-    })
-    res.status(200).json({products:data.flat(),count:count.count,productlength:products.data.length})
+async function delay(session, v) {
+  setTimeout(async () => {
+    return await shopify.api.rest.Metafield.all({
+      session,
+      metafield: {
+        owner_id: v.id,
+        owner_resource: "variant",
+      },
+    });
+  }, 1000);
 }
+export const exportProducts = async (req, res) => {
+  const session = res.locals.shopify.session;
+  const products = await shopify.api.rest.Product.all({
+    session,
+    limit: 50,
+    since_id: req.query.since_id,
+  });
+
+  const data = [];
+  const count = await shopify.api.rest.Product.count({ session });
+  try {
+    for (let i = 0; i < products.data.length; i++) {
+      const x = products.data[i];
+      if (x.vendor !== "Emissa") {
+        for (let j = 0; j < x.variants.length; j++) {
+          const v = x.variants[j];
+          console.log(v.id);
+          let metafield = {};
+          try {
+            metafield = await shopify.api.rest.Metafield.all({
+              session,
+              metafield: {
+                owner_id: v.id,
+                owner_resource: "variant",
+              },
+            });
+          } catch (err) {
+            metafield = await delay(session, v);
+          }
+
+          let footprints = "";
+          let compensation = "";
+          const footprintsData = metafield.data?.find((x) => x.key === "co2");
+          const compensationData = metafield.data?.find(
+            (x) => x.key === "co2compensation"
+          );
+
+          if (footprintsData?.value) {
+            footprints = footprintsData?.value;
+          }
+          if (compensationData?.value) {
+            compensation = JSON.parse(compensationData?.value);
+            compensation = compensation.amount;
+          }
+
+          const dataset = {
+            title: `${x.title} ${v.title}`,
+            product_id: x.id.toString(),
+            variant_id: v.id.toString(),
+            price: v.price,
+            "Co2 Compensation": footprints,
+            "Co2 Footprints": compensation,
+          };
+          data.push(dataset);
+        }
+      }
+    }
+    res.status(200).json({
+      products: data,
+      count: count.count,
+      productlength: products.data.length,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(200).json({
+      status: 400,
+      msg: err,
+    });
+  }
+};
+
+export const importProducts = async (req, res) => {
+
+  res.send({ test: "working" });
+};

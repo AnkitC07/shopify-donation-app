@@ -1,5 +1,5 @@
 import { Button, Divider, Icon, Page, Text } from "@shopify/polaris";
-import React from "react";
+import React, { useState } from "react";
 import { SortMinor } from "@shopify/polaris-icons";
 import DataTableCommon from "../Common/DataTableCommon";
 import { useAuthenticatedFetch } from "../../hooks/useAuthenticatedFetch";
@@ -7,6 +7,7 @@ import * as XLSX from "xlsx";
 
 const Index = () => {
   const fetch = useAuthenticatedFetch();
+  const [exptloading, exptloadingState] = useState(false);
   const sortIcon = <Icon source={SortMinor} color="base" />;
   // Table Data
   const rows = [
@@ -17,22 +18,40 @@ const Index = () => {
   const headings = ["Product name", "SKU", "CO2 Footprint (kg CO2e)"];
   const cols = ["text", "text", "numeric"];
 
+  const ImportPRoducts = async () => {
+    const req = await fetch(`/api/import_products`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ checking: "data" }),
+    });
+    const res = await req.json();
+
+    console.log(res);
+  };
+
   const ExportProducts = async () => {
     let since_id = 0;
     const products = [];
-      while (since_id !== null) {
-        const req = await fetch(`/api/export_products?since_id=${since_id}`);
-        const res = await req.json();
-        since_id = res.products[res.products.length - 1].product_id;
-
-        if (res.productlength !== 10) {
-          since_id = null;
-        }
-
-        products.push(...res.products);
-        console.log(res, since_id);
+    let productLengthCount = 0;
+    exptloadingState(true);
+    while (since_id !== null) {
+      const req = await fetch(`/api/export_products?since_id=${since_id}`);
+      const res = await req.json();
+      since_id = res.products[res.products.length - 1].product_id;
+      productLengthCount = productLengthCount + res.productlength;
+      console.log(
+        productLengthCount - 1 === res.count,
+        productLengthCount,
+        res.count
+      );
+      if (productLengthCount === res.count) {
+        since_id = null;
       }
-
+      products.push(...res.products);
+      console.log(res, since_id);
+    }
 
     const worksheet = XLSX.utils.json_to_sheet(products);
     const workbook = XLSX.utils.book_new();
@@ -55,6 +74,7 @@ const Index = () => {
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
     console.log(products);
+    exptloadingState(false);
   };
 
   return (
@@ -100,8 +120,14 @@ const Index = () => {
                   gap: "5px",
                 }}
               >
-                <Button icon={sortIcon}>Import CSV</Button>
-                <Button icon={sortIcon} onClick={ExportProducts}>
+                <Button icon={sortIcon} onClick={ImportPRoducts}>
+                  Import CSV
+                </Button>
+                <Button
+                  icon={sortIcon}
+                  onClick={ExportProducts}
+                  loading={exptloading}
+                >
                   Export CSV
                 </Button>
                 <Button primary>Save</Button>

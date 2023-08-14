@@ -15,8 +15,16 @@ const storeSchema = new mongoose.Schema({
   },
   sub: {
     type: Object
+  },
+  html: {
+    type: String
+  },
+  design: {
+    type: Object
+  },
+  productId: {
+    type: String
   }
-
 });
 
 export default mongoose.model("store", storeSchema);

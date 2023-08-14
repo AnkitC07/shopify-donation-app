@@ -1,17 +1,23 @@
 import { Button, ButtonGroup, FormLayout, HorizontalStack, Layout, LegacyCard, Select, Text, TextField, VerticalStack } from '@shopify/polaris'
-import React, { useCallback } from 'react'
+import React, { useCallback, useContext } from 'react'
+import { Toast } from "@shopify/app-bridge-react";
 import { useState } from 'react'
+import { defaultDesign, defaultHtml, MainContext } from '../../context/MainContext'
+import { useAuthenticatedFetch } from '../../hooks'
 import ColorpickerComp from '../Common/ColorpickerComp'
 import Colorpicker from '../Common/ColorpickerComp'
 
 const CheckBoxStyling = () => {
+    const fetch = useAuthenticatedFetch();
+    const [isLoadingSave, setIsLoadingSave] = useState(false);
+    const [isLoadingCancle, setIsLoadingCancle] = useState(false);
+    const [toastProps, setToastProps] = useState({ content: null });
+    const { design, setDesign, html, setHtml } = useContext(MainContext);
 
-    const [design, setDesign] = useState({
-        fontFamily: 'default',
-        fontColor: '#000000',
-        borderColor: '#d1d1d1'
-    })
 
+    const toastMarkup = toastProps.content && (
+        <Toast {...toastProps} onDismiss={() => setToastProps({ content: null })} />
+    );
     const handleSelectChange = useCallback(
         (value) => setDesign({
             ...design,
@@ -58,18 +64,56 @@ const CheckBoxStyling = () => {
         },
     ];
 
+    const handleSave = async () => {
+        setIsLoadingSave(true);
+        const temphtml = document.querySelector('#checkbox_div').innerHTML;
+        console.log("HTML=>", temphtml, design)
+
+        fetch("/api/saveHtml", {
+            method: 'POST',
+            headers: {
+                "Content-Type": 'application/json',
+            },
+            body: JSON.stringify({ html: temphtml, design: design })
+        })
+            .then((res) => {
+                setIsLoadingSave(false);
+                console.log(res)
+                if (res.ok) {
+                    setToastProps({ content: "Checkbox Saved!" });
+                    return res.json();
+                }
+
+                throw new Error('Network response was not ok.');
+            })
+            .then((data) => console.log('Successfully saved Html', data))
+            .catch(err => {
+                setToastProps({
+                    content: "There was an error Saving Checkbox",
+                    error: true,
+                });
+                console.log(err.message)
+            })
+    }
+    const handleCancle = () => {
+        setDesign(defaultDesign)
+    }
 
 
     return (
         <div className="stylingCard_wrapper">
+            {toastMarkup}
             <LegacyCard title="Preview">
                 <LegacyCard.Section >
-                    <div style={{
+                    <div id='checkbox_div' style={{
                         background: "#E5E5E5",
                         padding: "10px",
+                        display: 'flex'
                     }}>
                         <div className="checkbox_wrapper" style={{
                             position: 'relative',
+                            display: 'flex',
+                            justifyContent: 'end'
                         }}>
                             <div
                                 className="left_checkbox"
@@ -176,10 +220,7 @@ const CheckBoxStyling = () => {
                 </LegacyCard.Section>
 
                 <LegacyCard.Section>
-                    {/* <Layout fullWidth> */}
-
                     <VerticalStack gap="8">
-
                         <VerticalStack gap="2">
                             <Text as="p" fontWeight="bold">
                                 Font family
@@ -251,14 +292,12 @@ const CheckBoxStyling = () => {
                             </HorizontalStack>
                         </VerticalStack>
                         <HorizontalStack align='end'>
-                            <ButtonGroup >
-                                <Button>Cancel</Button>
-                                <Button primary>Save</Button>
+                            <ButtonGroup>
+                                <Button loading={isLoadingCancle} onClick={() => handleCancle()}>Cancel</Button>
+                                <Button loading={isLoadingSave} primary onClick={() => handleSave()}>Save</Button>
                             </ButtonGroup>
                         </HorizontalStack>
-
                     </VerticalStack>
-                    {/* </Layout> */}
                 </LegacyCard.Section>
             </LegacyCard>
         </div>
