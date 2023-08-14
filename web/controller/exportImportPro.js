@@ -1,5 +1,5 @@
 import shopify from "../shopify.js";
-
+import XLSX from 'xlsx'
 async function delay(session, v) {
   setTimeout(async () => {
     return await shopify.api.rest.Metafield.all({
@@ -83,6 +83,18 @@ export const exportProducts = async (req, res) => {
 };
 
 export const importProducts = async (req, res) => {
+  if (!req.files || Object.keys(req.files).length === 0) {
+    return res.status(400).send('No files were uploaded.');
+  }
+  const uploadedFile = req.files.file;
+  const workbook = XLSX.read(uploadedFile.data, { type: 'buffer' });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const data = XLSX.utils.sheet_to_json(sheet);
 
-  res.send({ test: "working" });
+  for (const row of data) {
+    // Perform your processing here for each row
+    console.log(row);
+  }
+
+  res.send({ test: "File processed." });
 };

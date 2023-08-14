@@ -5,8 +5,8 @@ import { useAuthenticatedFetch } from './hooks';
 
 const AppStart = () => {
     const fetch = useAuthenticatedFetch()
-    const { setDesign, setEnabled, setPassword } = useContext(MainContext)
-    
+    const { setDesign, setEnabled, setPassword, setOnboarding } = useContext(MainContext)
+
     console.log('testing index page')
 
     useEffect(() => {

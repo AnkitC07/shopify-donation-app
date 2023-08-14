@@ -21,6 +21,7 @@ import Stores from "./model/Stores.js";
 import { addProduct } from "./Product/product.js";
 import metafield, { metafield2 } from "./metafieldsConfig.js";
 import EI from "./routes/exportImportPro.js";
+import fileUpload from "express-fileupload";
 
 const addSessionShopToReqParams = (req, res, next) => {
   const shop = res.locals?.shopify?.session?.shop;
@@ -42,6 +43,7 @@ const STATIC_PATH =
     : `${process.cwd()}/frontend/`;
 
 const app = express();
+
 
 async function customDataMetafields(session) {
   // const client = new shopify.api.clients.Rest({ session });
@@ -204,6 +206,7 @@ app.use("/api/*", shopify.validateAuthenticatedSession());
 app.use("/*", addSessionShopToReqParams);
 
 app.use(express.json());
+app.use(fileUpload());
 
 // // Create Usage Records
 // app.get("/api/usage", async (_req, res) => {

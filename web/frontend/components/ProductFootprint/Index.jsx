@@ -1,9 +1,10 @@
 import { Button, Divider, Icon, Page, Text } from "@shopify/polaris";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { SortMinor } from "@shopify/polaris-icons";
 import DataTableCommon from "../Common/DataTableCommon";
 import { useAuthenticatedFetch } from "../../hooks/useAuthenticatedFetch";
 import * as XLSX from "xlsx";
+import FileUploader from "./FileUploadComp";
 
 const Index = () => {
   const fetch = useAuthenticatedFetch();
@@ -18,17 +19,43 @@ const Index = () => {
   const headings = ["Product name", "SKU", "CO2 Footprint (kg CO2e)"];
   const cols = ["text", "text", "numeric"];
 
-  const ImportPRoducts = async () => {
-    const req = await fetch(`/api/import_products`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ checking: "data" }),
-    });
-    const res = await req.json();
+  const [selectedFile, setSelectedFile] = useState(null);
+  const fileInputRef = useRef(null);
 
-    console.log(res);
+  const handleFileChange = (event) => {
+    const selectedFile = event.target.files[0];
+    if (selectedFile) {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      // Call the backend API to upload the file
+      handleUpload(formData);
+    }
+  };
+  const handleUpload = async (formData) => {
+    try {
+      const req = await fetch(`/api/import_products`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ checking: formData }),
+      });
+      const res = await req.json();
+
+      console.log(res);
+
+      // Handle response here
+    } catch (error) {
+      console.error('Error uploading file:', error);
+    }
+
+  };
+
+  const ImportPRoducts = async () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
 
   const ExportProducts = async () => {
@@ -120,9 +147,16 @@ const Index = () => {
                   gap: "5px",
                 }}
               >
-                <Button icon={sortIcon} onClick={ImportPRoducts}>
+                <FileUploader />
+                {/* <Button icon={sortIcon} onClick={ImportPRoducts}>
                   Import CSV
-                </Button>
+                </Button> */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                  onChange={handleFileChange}
+                />
                 <Button
                   icon={sortIcon}
                   onClick={ExportProducts}
