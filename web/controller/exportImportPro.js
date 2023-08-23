@@ -1,5 +1,6 @@
 import shopify from "../shopify.js";
-import XLSX from 'xlsx'
+import XLSX from "xlsx";
+
 async function delay(session, v) {
   setTimeout(async () => {
     return await shopify.api.rest.Metafield.all({
@@ -9,7 +10,7 @@ async function delay(session, v) {
         owner_resource: "variant",
       },
     });
-  }, 1000);
+  }, 500);
 }
 export const exportProducts = async (req, res) => {
   const session = res.locals.shopify.session;
@@ -83,18 +84,93 @@ export const exportProducts = async (req, res) => {
 };
 
 export const importProducts = async (req, res) => {
+  const session = res.locals.shopify.session;
+  const shop = await shopify.api.rest.Shop.all({ session });
   if (!req.files || Object.keys(req.files).length === 0) {
-    return res.status(400).send('No files were uploaded.');
+    return res.status(400).send("No files were uploaded.");
   }
   const uploadedFile = req.files.file;
-  const workbook = XLSX.read(uploadedFile.data, { type: 'buffer' });
+  const workbook = XLSX.read(uploadedFile.data, { type: "buffer" });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const data = XLSX.utils.sheet_to_json(sheet);
 
   for (const row of data) {
-    // Perform your processing here for each row
-    console.log(row);
+    console.log("running");
+    if (row["Co2 Compensation"] !== "" || row["Co2 Footprints"] !== "") {
+      console.log("running");
+      addMetafieldToVariant(session, row, shop.data[0]);
+    }
   }
-
   res.send({ test: "File processed." });
 };
+
+async function addMetafieldToVariant(session, data, shop) {
+  const products = await shopify.api.rest.Metafield.all({
+    session,
+    metafield: {
+      owner_id: data.variant_id,
+      owner_resource: "variant",
+    },
+  });
+
+  const co2footprints = products.data?.find((x) => x.key === "co2");
+  const co2compensation = products.data?.find(
+    (x) => x.key === "co2compensation"
+  );
+
+  if (co2footprints) {
+    metafield(session, data["Co2 Footprints"], co2footprints?.id, "update", {});
+  } else {
+    metafield(session, data["Co2 Footprints"], co2footprints?.id, "create", {
+      namespace: "co2footprints",
+      key: "co2",
+      type: "single_line_text_field",
+      owner_id: data.variant_id,
+      owner_resource: "variant",
+    });
+  }
+
+  if (isNaN(data["Co2 Compensation"]) === false) {
+    if (co2compensation) {
+      const price = JSON.stringify({
+        amount: data["Co2 Compensation"],
+        currency_code: shop.currency,
+      });
+      metafield(session, price, co2compensation?.id, "update", {});
+    } else {
+      const price = JSON.stringify({
+        amount: data["Co2 Compensation"],
+        currency_code: shop.currency,
+      });
+      console.log(shop.currency);
+      metafield(session, price, co2compensation?.id, "create", {
+        namespace: "co2compensation",
+        key: "co2compensation",
+        type: "money",
+        owner_id: data.variant_id,
+        owner_resource: "variant",
+      });
+    }
+  }
+}
+
+async function metafield(session, value, id, type, obj) {
+  const metafield = new shopify.api.rest.Metafield({
+    session,
+  });
+  if (type === "update") {
+    metafield.id = id;
+  } else {
+    metafield.namespace = obj.namespace;
+    metafield.key = obj.key;
+    metafield.type = obj.type;
+    metafield.owner_id = obj.owner_id;
+    metafield.owner_resource = obj.owner_resource;
+    console.log("create");
+  }
+  console.log(value);
+  metafield.value = value;
+  await metafield.save({
+    update: true,
+  });
+}
