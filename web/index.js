@@ -199,17 +199,17 @@ const getVariant = async (session, id, cartPrice) => {
     let closestVariant = null;
     let closestDifference = Infinity;
     const mainPrice = cartPrice;
+    if (cartPrice != 0) {
+      for (const variant of variants) {
+        const price = variant.price;
+        const difference = Math.abs(price - mainPrice);
 
-    for (const variant of variants) {
-      const price = variant.price;
-      const difference = Math.abs(price - mainPrice);
-
-      if (difference < closestDifference) {
-        closestDifference = difference;
-        closestVariant = variant;
+        if (difference < closestDifference) {
+          closestDifference = difference;
+          closestVariant = variant;
+        }
       }
     }
-
     return closestVariant;
   }
 
@@ -263,10 +263,11 @@ app.post("/api/getAppStatus", async (req, res) => {
       responseBody.status = 200;
       responseBody.html = dom.serialize();
       responseBody.design = findShop.design;
-      responseBody.price = total;
       responseBody.id = findShop.productId;
-      responseBody.cartVariantId = cartVariant.id;
-      responseBody.prop = cartVariant.title;
+      responseBody.cartVariant = cartVariant;
+      responseBody.price = cartVariant?.price;
+      responseBody.cartVariantId = cartVariant?.id;
+      responseBody.prop = cartVariant?.title;
     }
 
     res.status(200).json(responseBody);
