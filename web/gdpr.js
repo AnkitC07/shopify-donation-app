@@ -100,6 +100,8 @@ export default {
     callback: async (topic, shop, body, webhookId) => {
       const payload = JSON.parse(body);
       console.log('Uninstall=>', payload)
+
+      
       const session = await getStoreAccessToken(shop)
       const id = await getProductId(shop)
       console.log("session", session, id)

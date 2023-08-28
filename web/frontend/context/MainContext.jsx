@@ -1,17 +1,17 @@
 import { createContext, useState } from "react";
 
-export const MainContext = createContext()
+export const MainContext = createContext();
 
 export const defaultDesign = {
-    fontFamily: 'default',
-    fontColor: '#000000',
-    borderColor: '#d1d1d1'
-}
+  "font-family": "default",
+  color: "#000000",
+  "border-color": "#d1d1d1",
+};
 export const defaultAnalytics = {
-    footprintReductions: 0,
-    totalOffset: 0,
-    climateMitigation: 0
-}
+  footprintReductions: 0,
+  totalOffset: 0,
+  climateMitigation: 0,
+};
 export const defaultHtml = `<div id="checkbox_div" class="checkbox_wrapper" style="position: relative; display: flex; justify-content: end;">
     <div class="left_checkbox"
         style="display: inline-flex; align-items: center; gap: 10px; border: 1px solid rgb(209, 209, 209); padding: 10px 15px; background: rgb(255, 255, 255); color: rgb(0, 0, 0);">
@@ -41,31 +41,39 @@ export const defaultHtml = `<div id="checkbox_div" class="checkbox_wrapper" styl
                     style="color: rgb(83, 150, 77);">Emissa</span></p>
         </div>
         <div class="check_custom" style="display: flex; align-items: center;"><span
-                style="font-size: 12px; text-align: right;">€0.68</span><input type="checkbox" name="footprint"
+                style="font-size: 12px; text-align: right;">€0.68</span><input  type="checkbox" name="footprint"
                 id="reduce" style="accent-color: rgb(90, 157, 118); margin-left: 5px; height: 24px; width: 15px;"></div>
     </div>
-</div>`
+</div>`;
 
 export const MainContextProvider = ({ children }) => {
-    const [enabled, setEnabled] = useState(false);
-    const [password, setPassword] = useState('');
-    const [analytics, setAnalytics] = useState(defaultAnalytics)
-    const [design, setDesign] = useState(defaultDesign)
-    const [html, setHtml] = useState(defaultHtml)
-    const [onboardingScreen, setOnboarding] = useState({
-        loading: true,
-        status: false,
-    });
-    return (
-        <MainContext.Provider value={{
-            enabled, setEnabled,
-            design, setDesign,
-            password, setPassword,
-            analytics, setAnalytics,
-            html, setHtml,
-            onboardingScreen, setOnboarding
-        }}>
-            {children}
-        </MainContext.Provider>
-    )
-}
+  const [enabled, setEnabled] = useState(false);
+  const [password, setPassword] = useState("");
+  const [analytics, setAnalytics] = useState(defaultAnalytics);
+  const [design, setDesign] = useState(defaultDesign);
+  const [html, setHtml] = useState(defaultHtml);
+  const [onboardingScreen, setOnboarding] = useState({
+    loading: true,
+    status: false,
+  });
+  return (
+    <MainContext.Provider
+      value={{
+        enabled,
+        setEnabled,
+        design,
+        setDesign,
+        password,
+        setPassword,
+        analytics,
+        setAnalytics,
+        html,
+        setHtml,
+        onboardingScreen,
+        setOnboarding,
+      }}
+    >
+      {children}
+    </MainContext.Provider>
+  );
+};
