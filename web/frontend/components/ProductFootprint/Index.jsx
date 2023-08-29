@@ -1,5 +1,5 @@
 import { Button, Divider, Icon, Page, Text } from "@shopify/polaris";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { SortMinor } from "@shopify/polaris-icons";
 import DataTableCommon from "../Common/DataTableCommon";
 import { useAuthenticatedFetch } from "../../hooks/useAuthenticatedFetch";
@@ -22,16 +22,29 @@ const Index = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const fileInputRef = useRef(null);
 
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const req = await fetch(`/api/product-footprint`);
+      const res = await req.json();
+      const products = res.products;
+      console.log(products);
+    };
+    fetchProducts();
+  }, []);
+
+  // FILE IMPORT
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
     if (selectedFile) {
       const formData = new FormData();
-      formData.append('file', selectedFile);
+      formData.append("file", selectedFile);
 
       // Call the backend API to upload the file
       handleUpload(formData);
     }
   };
+
+  // IMPORT
   const handleUpload = async (formData) => {
     try {
       const req = await fetch(`/api/import_products`, {
@@ -47,9 +60,8 @@ const Index = () => {
 
       // Handle response here
     } catch (error) {
-      console.error('Error uploading file:', error);
+      console.error("Error uploading file:", error);
     }
-
   };
 
   const ImportPRoducts = async () => {
@@ -58,6 +70,7 @@ const Index = () => {
     }
   };
 
+  // EXPORT
   const ExportProducts = async () => {
     let since_id = 0;
     const products = [];
@@ -154,7 +167,7 @@ const Index = () => {
                 <input
                   type="file"
                   ref={fileInputRef}
-                  style={{ display: 'none' }}
+                  style={{ display: "none" }}
                   onChange={handleFileChange}
                 />
                 <Button

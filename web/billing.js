@@ -1,41 +1,38 @@
-
 import { GraphqlQueryError, BillingInterval } from "@shopify/shopify-api";
 import { updateId } from "./model/Controller/store.js";
 import Stores from "./model/Stores.js";
 import shopify from "./shopify.js";
 
-const USAGE_CHARGE_INCREMENT_AMOUNT = 1.0;
-
 export const billingConfig = {
-    "My plan": {
-        // This is an example configuration that would do a one-time charge for $5 (only USD is currently supported)
-        amount: 2000000,
-        currencyCode: "USD",
-        interval: BillingInterval.Usage,
-        usageTerms: "One dollar per button click",
-    },
+  "My plan": {
+    // This is an example configuration that would do a one-time charge for $5 (only USD is currently supported)
+    amount: 2000000,
+    currencyCode: "USD",
+    interval: BillingInterval.Usage,
+    usageTerms: "One dollar per checkbox click",
+  },
 };
 
 export async function requestBilling(res, next) {
-    const plans = Object.keys(billingConfig);
-    const session = res.locals.shopify.session;
-    const hasPayment = await shopify.api.billing.check({
-        session,
-        plans: plans,
-        isTest: true,
-    });
+  const plans = Object.keys(billingConfig);
+  const session = res.locals.shopify.session;
+  const hasPayment = await shopify.api.billing.check({
+    session,
+    plans: plans,
+    isTest: true,
+  });
 
-    if (hasPayment) {
-        next();
-    } else {
-        res.redirect(
-            await shopify.api.billing.request({
-                session,
-                plan: plans[0],
-                isTest: true,
-            })
-        );
-    }
+  if (hasPayment) {
+    next();
+  } else {
+    res.redirect(
+      await shopify.api.billing.request({
+        session,
+        plan: plans[0],
+        isTest: true,
+      })
+    );
+  }
 }
 
 const CREATE_USAGE_RECORD = `
@@ -89,67 +86,69 @@ query appSubscription {
  * You may want to store this ID in your database, but for simplicity, we are
  * querying the API for it here.
  */
-export async function createUsageRecord(session) {
+export async function createUsageRecord(
+  session,
+  USAGE_CHARGE_INCREMENT_AMOUNT
+) {
+  const client = new shopify.api.clients.Graphql({ session });
+  const findShop = await Stores.findOne({ storename: session.shop });
+  let subscriptionLineItem;
+  if (findShop.sub === "" || findShop.sub == null) {
+    subscriptionLineItem = await getAppSubscription(session);
+    updateId(session.shop, subscriptionLineItem);
+  } else {
+    console.log("first");
+    subscriptionLineItem = findShop.sub;
+  }
+  console.log("subscription=>", subscriptionLineItem);
+  const plan = Object.keys(billingConfig)[0];
+  const res = {
+    capacityReached: false,
+    createdRecord: false,
+  };
 
-    const client = new shopify.api.clients.Graphql({ session });
-    const findShop = await Stores.findOne({ storename: session.shop });
-    let subscriptionLineItem;
-    if (findShop.sub === '' || findShop.sub == null) {
-        subscriptionLineItem = await getAppSubscription(session);
-        updateId(session.shop, subscriptionLineItem)
-    } else {
-        console.log('first')
-        subscriptionLineItem = findShop.sub
-    }
-    console.log('subscription=>', subscriptionLineItem);
-    const plan = Object.keys(billingConfig)[0];
-    const res = {
-        capacityReached: false,
-        createdRecord: false,
-    };
-
-    // If the capacity has already been reached, we will not attempt to create the usage record
-    // On production shops, if you attempt to create a usage record and the capacity and been
-    // reached Shopify will return an error. On development shops, the usage record will be created
-    if (
-        subscriptionLineItem.balanceUsed + USAGE_CHARGE_INCREMENT_AMOUNT >
-        subscriptionLineItem.cappedAmount
-    ) {
-        res.capacityReached = true;
-        return res;
-    }
-
-    try {
-        // This makes an API call to Shopify to create a usage record
-        const temp = await client.query({
-            data: {
-                query: CREATE_USAGE_RECORD,
-                variables: {
-                    subscriptionLineItemId: subscriptionLineItem.id,
-                    amount: USAGE_CHARGE_INCREMENT_AMOUNT,
-                    description: billingConfig[plan].usageTerms,
-                },
-            },
-        });
-        console.log("checking=>", temp.body.data)
-        res.createdRecord = true;
-    } catch (error) {
-        if (error instanceof GraphqlQueryError) {
-            throw new Error(
-                `${error.message}\n${JSON.stringify(error.response, null, 2)}`
-            );
-        } else {
-            throw error;
-        }
-    }
-
-    if (
-        subscriptionLineItem.balanceUsed + USAGE_CHARGE_INCREMENT_AMOUNT >=
-        subscriptionLineItem.cappedAmount
-    ) {
-        res.capacityReached = true;
-    }
+  // If the capacity has already been reached, we will not attempt to create the usage record
+  // On production shops, if you attempt to create a usage record and the capacity and been
+  // reached Shopify will return an error. On development shops, the usage record will be created
+  if (
+    subscriptionLineItem.balanceUsed + USAGE_CHARGE_INCREMENT_AMOUNT >
+    subscriptionLineItem.cappedAmount
+  ) {
+    res.capacityReached = true;
     return res;
+  }
+
+  try {
+    // This makes an API call to Shopify to create a usage record
+    const temp = await client.query({
+      data: {
+        query: CREATE_USAGE_RECORD,
+        variables: {
+          subscriptionLineItemId: subscriptionLineItem.id,
+          amount: USAGE_CHARGE_INCREMENT_AMOUNT,
+          description: billingConfig[plan].usageTerms,
+        },
+      },
+    });
+    console.log("checking=>", temp.body.data);
+    res.createdRecord = true;
+  } catch (error) {
+    if (error instanceof GraphqlQueryError) {
+      throw new Error(
+        `${error.message}\n${JSON.stringify(error.response, null, 2)}`
+      );
+    } else {
+      throw error;
+    }
+  }
+
+  if (
+    subscriptionLineItem.balanceUsed + USAGE_CHARGE_INCREMENT_AMOUNT >=
+    subscriptionLineItem.cappedAmount
+  ) {
+    res.capacityReached = true;
+  }
+  return res;
 }
 
 /*
@@ -158,45 +157,44 @@ export async function createUsageRecord(session) {
  * for simplicity, we are querying the API for it here.
  */
 export async function getAppSubscription(session) {
-    const client = new shopify.api.clients.Graphql({ session });
-    let subscriptionLineItem = {};
-    const planName = Object.keys(billingConfig)[0];
-    const planDescription = billingConfig[planName].usageTerms;
+  const client = new shopify.api.clients.Graphql({ session });
+  let subscriptionLineItem = {};
+  const planName = Object.keys(billingConfig)[0];
+  const planDescription = billingConfig[planName].usageTerms;
 
-    try {
-        const response = await client.query({
-            data: {
-                query: HAS_PAYMENTS_QUERY,
-            },
-        });
-        response.body.data.currentAppInstallation.activeSubscriptions.forEach(
-            (subscription) => {
-                if (subscription.name === planName) {
-                    subscription.lineItems.forEach((lineItem) => {
-                        if (lineItem.plan.pricingDetails.terms === planDescription) {
-                            subscriptionLineItem = {
-                                id: lineItem.id,
-                                balanceUsed: parseFloat(
-                                    lineItem.plan.pricingDetails.balanceUsed.amount
-                                ),
-                                cappedAmount: parseFloat(
-                                    lineItem.plan.pricingDetails.cappedAmount.amount
-                                ),
-                            };
-                        }
-                    });
-                }
+  try {
+    const response = await client.query({
+      data: {
+        query: HAS_PAYMENTS_QUERY,
+      },
+    });
+    response.body.data.currentAppInstallation.activeSubscriptions.forEach(
+      (subscription) => {
+        if (subscription.name === planName) {
+          subscription.lineItems.forEach((lineItem) => {
+            if (lineItem.plan.pricingDetails.terms === planDescription) {
+              subscriptionLineItem = {
+                id: lineItem.id,
+                balanceUsed: parseFloat(
+                  lineItem.plan.pricingDetails.balanceUsed.amount
+                ),
+                cappedAmount: parseFloat(
+                  lineItem.plan.pricingDetails.cappedAmount.amount
+                ),
+              };
             }
-        );
-    } catch (error) {
-        if (error instanceof GraphqlQueryError) {
-            throw new Error(
-                `${error.message}\n${JSON.stringify(error.response, null, 2)}`
-            );
-        } else {
-            throw error;
+          });
         }
+      }
+    );
+  } catch (error) {
+    if (error instanceof GraphqlQueryError) {
+      throw new Error(
+        `${error.message}\n${JSON.stringify(error.response, null, 2)}`
+      );
+    } else {
+      throw error;
     }
-    return subscriptionLineItem;
+  }
+  return subscriptionLineItem;
 }
-

@@ -1,7 +1,13 @@
 import shopify from "../shopify.js";
 import XLSX from "xlsx";
+import Bottleneck from "bottleneck";
 
-async function delay(session, v) {
+const limiter = new Bottleneck({
+  maxConcurrent: 1, // Number of concurrent requests
+  minTime: 500, // Minimum time between requests in milliseconds
+});
+
+export async function delay(session, v) {
   setTimeout(async () => {
     return await shopify.api.rest.Metafield.all({
       session,
@@ -95,13 +101,20 @@ export const importProducts = async (req, res) => {
   const data = XLSX.utils.sheet_to_json(sheet);
 
   for (const row of data) {
-    console.log("running");
-    if (row["Co2 Compensation"] !== "" || row["Co2 Footprints"] !== "") {
-      console.log("running");
-      addMetafieldToVariant(session, row, shop.data[0]);
+    console.log("Co2 Compensation:", row["Co2 Compensation"]);
+    console.log("Co2 Footprints:", row["Co2 Footprints"]);
+    if (
+      (row["Co2 Compensation"] && row["Co2 Compensation"] !== "") ||
+      (row["Co2 Footprints"] && row["Co2 Footprints"] !== "")
+    ) {
+      console.log("running", row);
+      // addMetafieldToVariant(session, row, shop.data[0]);
+      await limiter.schedule(() =>
+        addMetafieldToVariant(session, row, shop.data[0])
+      );
     }
   }
-  res.send({ test: "File processed." });
+  res.send({ status: "File processed." });
 };
 
 async function addMetafieldToVariant(session, data, shop) {
@@ -127,6 +140,7 @@ async function addMetafieldToVariant(session, data, shop) {
       type: "single_line_text_field",
       owner_id: data.variant_id,
       owner_resource: "variant",
+      description: data.product_id,
     });
   }
 
@@ -149,6 +163,7 @@ async function addMetafieldToVariant(session, data, shop) {
         type: "money",
         owner_id: data.variant_id,
         owner_resource: "variant",
+        description: data.product_id,
       });
     }
   }
@@ -166,6 +181,7 @@ async function metafield(session, value, id, type, obj) {
     metafield.type = obj.type;
     metafield.owner_id = obj.owner_id;
     metafield.owner_resource = obj.owner_resource;
+    metafield.description = obj.description;
     console.log("create");
   }
   console.log(value);

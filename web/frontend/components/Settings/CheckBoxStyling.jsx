@@ -34,10 +34,10 @@ const CheckBoxStyling = () => {
   );
   const handleSelectChange = useCallback(
     (value) =>
-      setDesign({
-        ...design,
+      setDesign((state) => ({
+        ...state,
         "font-family": value,
-      }),
+      })),
     []
   );
   const fontOption = [

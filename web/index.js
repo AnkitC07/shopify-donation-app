@@ -27,6 +27,7 @@ import EI from "./routes/exportImportPro.js";
 import fileUpload from "express-fileupload";
 import { toASCII } from "punycode";
 import { Session } from "inspector";
+import prodFootprint from "./routes/productFootprint.js";
 
 const addSessionShopToReqParams = (req, res, next) => {
   const shop = res.locals?.shopify?.session?.shop;
@@ -161,35 +162,10 @@ const getMeta = async (session, id) => {
     return Number(JSON.parse(co2compensation?.value).amount);
   }
   return 0;
-  // const Endpoint = `${shop}/admin/api/2023-07/products/${id}/metafields.json`;
-  // const MetaData = async (Endpoint) => {
-  //   try {
-  //     const response = await fetch(Endpoint, {
-  //       method: "GET",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         "X-Shopify-Access-Token": `${accessToken}`,
-  //       },
-  //     });
-
-  //     const result = await response.json();
-
-  //     if (result.errors) {
-  //       throw new Error(
-  //         `Failed to Fetch Metafield Value for ${shop_name}: ${JSON.stringify(
-  //           result.errors
-  //         )}`
-  //       );
-  //     }
-
-  //     return result.metafields;
-  //   } catch (err) {
-  //     throw new Error(err.message);
-  //   }
-  // };
 };
 
 const getVariant = async (session, id, cartPrice) => {
+  console.log("get variant", cartPrice);
   const product = await shopify.api.rest.Product.find({
     session: session,
     id: id,
@@ -350,6 +326,7 @@ app.use("/*", addSessionShopToReqParams);
 // Change App Status
 
 app.use("/api", EI);
+app.use("/api", prodFootprint);
 app.get("/api/appStatus", async (_req, res) => {
   let status = 200;
   let error = null;

@@ -1,3 +1,3 @@
 # This file stores configurations for your Shopify app.
 
-scopes = "write_products,read_orders,write_orders,read_customers,write_metaobject_definitions"
+scopes = "write_products,read_orders,write_orders,read_customers,write_metaobject_definitions,read_metaobjects,write_metaobjects"
