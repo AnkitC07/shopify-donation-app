@@ -28,6 +28,7 @@ import fileUpload from "express-fileupload";
 import { toASCII } from "punycode";
 import { Session } from "inspector";
 import prodFootprint from "./routes/productFootprint.js";
+import analyticRouter from "./routes/analytics.js";
 
 const addSessionShopToReqParams = (req, res, next) => {
   const shop = res.locals?.shopify?.session?.shop;
@@ -327,6 +328,7 @@ app.use("/*", addSessionShopToReqParams);
 
 app.use("/api", EI);
 app.use("/api", prodFootprint);
+app.use("/api", analyticRouter);
 app.get("/api/appStatus", async (_req, res) => {
   let status = 200;
   let error = null;

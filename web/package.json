@@ -20,6 +20,7 @@
     "cross-env": "^7.0.3",
     "express-fileupload": "^1.4.0",
     "jsdom": "^22.1.0",
+    "node-fetch": "^3.3.2",
     "serve-static": "^1.14.1",
     "xlsx": "^0.18.5"
   },

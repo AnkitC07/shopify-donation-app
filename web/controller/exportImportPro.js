@@ -1,6 +1,7 @@
 import shopify from "../shopify.js";
 import XLSX from "xlsx";
 import Bottleneck from "bottleneck";
+import { addTag } from "../functions.js";
 
 const limiter = new Bottleneck({
   maxConcurrent: 1, // Number of concurrent requests
@@ -70,6 +71,7 @@ export const exportProducts = async (req, res) => {
             price: v.price,
             "Co2 Compensation": footprints,
             "Co2 Footprints": compensation,
+            tags:x.tags
           };
           data.push(dataset);
         }
@@ -103,16 +105,11 @@ export const importProducts = async (req, res) => {
   for (const row of data) {
     console.log("Co2 Compensation:", row["Co2 Compensation"]);
     console.log("Co2 Footprints:", row["Co2 Footprints"]);
-    if (
-      (row["Co2 Compensation"] && row["Co2 Compensation"] !== "") ||
-      (row["Co2 Footprints"] && row["Co2 Footprints"] !== "")
-    ) {
       console.log("running", row);
       // addMetafieldToVariant(session, row, shop.data[0]);
       await limiter.schedule(() =>
         addMetafieldToVariant(session, row, shop.data[0])
       );
-    }
   }
   res.send({ status: "File processed." });
 };
@@ -130,11 +127,12 @@ async function addMetafieldToVariant(session, data, shop) {
   const co2compensation = products.data?.find(
     (x) => x.key === "co2compensation"
   );
-
+  let co2 = {}
+  let co2comp = {}
   if (co2footprints) {
-    metafield(session, data["Co2 Footprints"], co2footprints?.id, "update", {});
+    co2 = await metafield(session, data["Co2 Footprints"], co2footprints?.id, "update", {});
   } else {
-    metafield(session, data["Co2 Footprints"], co2footprints?.id, "create", {
+    co2 = await metafield(session, data["Co2 Footprints"], co2footprints?.id, "create", {
       namespace: "co2footprints",
       key: "co2",
       type: "single_line_text_field",
@@ -150,14 +148,14 @@ async function addMetafieldToVariant(session, data, shop) {
         amount: data["Co2 Compensation"],
         currency_code: shop.currency,
       });
-      metafield(session, price, co2compensation?.id, "update", {});
+      co2comp = await metafield(session, price, co2compensation?.id, "update", {});
     } else {
       const price = JSON.stringify({
         amount: data["Co2 Compensation"],
         currency_code: shop.currency,
       });
       console.log(shop.currency);
-      metafield(session, price, co2compensation?.id, "create", {
+      co2comp = await metafield(session, price, co2compensation?.id, "create", {
         namespace: "co2compensation",
         key: "co2compensation",
         type: "money",
@@ -167,9 +165,15 @@ async function addMetafieldToVariant(session, data, shop) {
       });
     }
   }
+  // console.log(co2,co2comp)
+  addTag(session,data)
 }
 
+
+
 async function metafield(session, value, id, type, obj) {
+
+
   const metafield = new shopify.api.rest.Metafield({
     session,
   });
@@ -184,9 +188,10 @@ async function metafield(session, value, id, type, obj) {
     metafield.description = obj.description;
     console.log("create");
   }
-  console.log(value);
+
   metafield.value = value;
-  await metafield.save({
+   await metafield.save({
     update: true,
   });
+  return metafield
 }

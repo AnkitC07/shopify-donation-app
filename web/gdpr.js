@@ -75,10 +75,12 @@ const handleOrder = async (payload, shop) => {
     await usage_charge.save({
       update: true,
     });
-
     console.log("charge updated=>", usage_charge);
+      
   }
 };
+
+
 
 /**
  * @type {{[key: string]: import("@shopify/shopify-api").WebhookHandler}}
