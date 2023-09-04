@@ -14,8 +14,8 @@ export async function addTag(session, data) {
   ) {
     if (!product.tags.includes("co2compensation")) {
       const temptags = product.tags;
-      const t = temptags.split(',')
-      t.push('co2compensation')
+      const t = temptags.split(",");
+      t.push("co2compensation");
       product.tags = t;
       await product.save({
         update: true,
@@ -37,5 +37,5 @@ export async function addTag(session, data) {
       });
     }
   }
-  console.log(product);
+  console.log("final product tag=>", product.tags);
 }

@@ -5,7 +5,7 @@ import { addTag } from "../functions.js";
 
 const limiter = new Bottleneck({
   maxConcurrent: 1, // Number of concurrent requests
-  minTime: 500, // Minimum time between requests in milliseconds
+  minTime: 600, // Minimum time between requests in milliseconds
 });
 
 export async function delay(session, v) {
@@ -71,7 +71,7 @@ export const exportProducts = async (req, res) => {
             price: v.price,
             "Co2 Compensation": footprints,
             "Co2 Footprints": compensation,
-            tags:x.tags
+            tags: x.tags,
           };
           data.push(dataset);
         }
@@ -105,11 +105,11 @@ export const importProducts = async (req, res) => {
   for (const row of data) {
     console.log("Co2 Compensation:", row["Co2 Compensation"]);
     console.log("Co2 Footprints:", row["Co2 Footprints"]);
-      console.log("running", row);
-      // addMetafieldToVariant(session, row, shop.data[0]);
-      await limiter.schedule(() =>
-        addMetafieldToVariant(session, row, shop.data[0])
-      );
+    console.log("running", row);
+    // addMetafieldToVariant(session, row, shop.data[0]);
+    await limiter.schedule(() =>
+      addMetafieldToVariant(session, row, shop.data[0])
+    );
   }
   res.send({ status: "File processed." });
 };
@@ -122,24 +122,56 @@ async function addMetafieldToVariant(session, data, shop) {
       owner_resource: "variant",
     },
   });
+  console.log("metaProduct", products.data);
 
   const co2footprints = products.data?.find((x) => x.key === "co2");
   const co2compensation = products.data?.find(
     (x) => x.key === "co2compensation"
   );
-  let co2 = {}
-  let co2comp = {}
+  let co2 = {};
+  let co2comp = {};
   if (co2footprints) {
-    co2 = await metafield(session, data["Co2 Footprints"], co2footprints?.id, "update", {});
-  } else {
-    co2 = await metafield(session, data["Co2 Footprints"], co2footprints?.id, "create", {
-      namespace: "co2footprints",
-      key: "co2",
-      type: "single_line_text_field",
-      owner_id: data.variant_id,
-      owner_resource: "variant",
-      description: data.product_id,
-    });
+    // try {
+    co2 = await metafield(
+      session,
+      data["Co2 Footprints"],
+      co2footprints?.id,
+      co2footprints?.owner_id,
+      "update",
+      {}
+    );
+    // } catch (error) {
+    //   setTimeout(async () => {
+    //     co2 = await metafield(
+    //       session,
+    //       data["Co2 Footprints"],
+    //       co2footprints?.id,
+    //       data.variant_id,
+    //       "update",
+    //       {}
+    //     );
+    //   }, [500]);
+    // }
+  } else if (
+    data["Co2 Footprints"] &&
+    data["Co2 Footprints"] != "" &&
+    data["Co2 Footprints"] != 0
+  ) {
+    co2 = await metafield(
+      session,
+      data["Co2 Footprints"],
+      co2footprints?.id,
+      co2footprints?.owner_id,
+      "create",
+      {
+        namespace: "co2footprints",
+        key: "co2",
+        type: "single_line_text_field",
+        owner_id: data.variant_id,
+        owner_resource: "variant",
+        description: data.product_id,
+      }
+    );
   }
 
   if (isNaN(data["Co2 Compensation"]) === false) {
@@ -148,36 +180,56 @@ async function addMetafieldToVariant(session, data, shop) {
         amount: data["Co2 Compensation"],
         currency_code: shop.currency,
       });
-      co2comp = await metafield(session, price, co2compensation?.id, "update", {});
-    } else {
+      co2comp = await metafield(
+        session,
+        price,
+        co2compensation?.id,
+        co2compensation?.owner_id,
+        "update",
+        {}
+      );
+    } else if (
+      data["Co2 Compensation"] &&
+      data["Co2 Compensation"] !== "" &&
+      data["Co2 Compensation"] != 0
+    ) {
       const price = JSON.stringify({
         amount: data["Co2 Compensation"],
         currency_code: shop.currency,
       });
-      console.log(shop.currency);
-      co2comp = await metafield(session, price, co2compensation?.id, "create", {
-        namespace: "co2compensation",
-        key: "co2compensation",
-        type: "money",
-        owner_id: data.variant_id,
-        owner_resource: "variant",
-        description: data.product_id,
-      });
+      co2comp = await metafield(
+        session,
+        price,
+        co2compensation?.id,
+        co2compensation?.owner_id,
+        "create",
+        {
+          namespace: "co2compensation",
+          key: "co2compensation",
+          type: "money",
+          owner_id: data.variant_id,
+          owner_resource: "variant",
+          description: data.product_id,
+        }
+      );
     }
+  } else if (co2compensation && data["Co2 Compensation"] == undefined) {
+    await deleteMeta(session, co2compensation?.id, co2compensation?.owner_id);
   }
-  // console.log(co2,co2comp)
-  addTag(session,data)
+
+  await addTag(session, data);
 }
 
-
-
-async function metafield(session, value, id, type, obj) {
-
-
+async function metafield(session, value, id, variantId, type, obj) {
   const metafield = new shopify.api.rest.Metafield({
     session,
   });
+  console.log(type, value);
   if (type === "update") {
+    if (value === undefined || value === null || value === 0 || value === "") {
+      await deleteMeta(session, id, variantId);
+      return metafield;
+    }
     metafield.id = id;
   } else {
     metafield.namespace = obj.namespace;
@@ -188,10 +240,18 @@ async function metafield(session, value, id, type, obj) {
     metafield.description = obj.description;
     console.log("create");
   }
-
   metafield.value = value;
-   await metafield.save({
+  await metafield.save({
     update: true,
   });
-  return metafield
+  return metafield;
+}
+
+async function deleteMeta(session, id, vId) {
+  console.log("ids in delete--", id, vId);
+  await shopify.api.rest.Metafield.delete({
+    session: session,
+    variant_id: vId,
+    id: id,
+  });
 }

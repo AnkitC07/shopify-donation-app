@@ -89,6 +89,7 @@ const prodFootprint = express.Router();
 prodFootprint.get("/product-footprint", async (req, res) => {
   try {
     const session = res.locals.shopify.session;
+    console.log(session);
     const products = await fetchProductsWithMetafields(session);
     console.log("Products=>", products);
     res.status(200).json({ products: products });
@@ -100,38 +101,33 @@ prodFootprint.get("/product-footprint", async (req, res) => {
 
 async function fetchProductsWithMetafields(session) {
   const query = `query {
-  productVariants(first: 10, query: "metafield_namespace:'co2compensation'") {
-    edges {
-      node {
-        id
-        title
-        sku
-        metafields(first: 1, namespace: "co2footprints") {
-          edges {
-            node {
-              id
-              key
-              value
-            }
-          }
-        }
-        metafields2: metafields(first: 1, namespace: "co2compensation") {
-          edges {
-            node {
-              id
-              key
-              value
-            }
-          }
-        }
-        product {
+    products(first: 10, query: "tag:'co2compensation'") {
+      edges {
+        node {
           id
+          title
+          variants(first: 10) {
+            edges {
+              node {
+                sku
+                metafields(namespace: "co2footprints", first: 1) {
+                  edges {
+                    node {
+                      id
+                      type
+                      value
+                      namespace
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     }
-  }
 }`;
-console.log(session.shop)
+  console.log(session.shop);
   let requestOptions = {
     method: "POST",
     headers: {
@@ -148,7 +144,7 @@ console.log(session.shop)
     );
     const result = await request.json();
     // console.log("result in graphql api", result.data.productVariants.edges)
-    return result.data.productVariants.edges;
+    return result.data.products.edges;
   } catch (err) {
     console.log("error in graphql api", err);
     return err;
