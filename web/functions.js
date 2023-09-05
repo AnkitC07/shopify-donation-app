@@ -16,6 +16,7 @@ export async function addTag(session, data) {
       const temptags = product.tags;
       const t = temptags.split(",");
       t.push("co2compensation");
+      t.join(",");
       product.tags = t;
       await product.save({
         update: true,

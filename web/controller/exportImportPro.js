@@ -131,7 +131,6 @@ async function addMetafieldToVariant(session, data, shop) {
   let co2 = {};
   let co2comp = {};
   if (co2footprints) {
-    // try {
     co2 = await metafield(
       session,
       data["Co2 Footprints"],
@@ -140,18 +139,6 @@ async function addMetafieldToVariant(session, data, shop) {
       "update",
       {}
     );
-    // } catch (error) {
-    //   setTimeout(async () => {
-    //     co2 = await metafield(
-    //       session,
-    //       data["Co2 Footprints"],
-    //       co2footprints?.id,
-    //       data.variant_id,
-    //       "update",
-    //       {}
-    //     );
-    //   }, [500]);
-    // }
   } else if (
     data["Co2 Footprints"] &&
     data["Co2 Footprints"] != "" &&

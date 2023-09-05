@@ -8,12 +8,16 @@ import {
   Select,
   Text,
 } from "@shopify/polaris";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import DataTableCommon from "../Common/DataTableCommon";
+import { useAuthenticatedFetch } from "../../hooks";
 
 const Index = () => {
+  const fetch = useAuthenticatedFetch();
+
   const [selected, setSelected] = useState("today");
+  const [rows, setRows] = useState([]);
 
   // Top Cards
   const impactCards = [
@@ -58,14 +62,7 @@ const Index = () => {
   ];
 
   // Table Data
-  const rows = [
-    ["# 1234", "12-06-2023", 4.32, "€2", "€130.00"],
-    ["# 1234", "12-06-2023", 4.32, "€2", "€110.00"],
-    ["# 2341", "12-06-2023", 4.32, "€2", "€108.00"],
-    ["# 1234", "12-06-2023", 4.32, "€2", "€130.00"],
-    ["# 1234", "12-06-2023", 4.32, "€2", "€110.00"],
-    ["# 2341", "12-06-2023", 4.32, "€2", "€108.00"],
-  ];
+
   const headings = [
     "Order",
     "Date",
@@ -85,6 +82,18 @@ const Index = () => {
     { label: "Yesterday", value: "yesterday" },
     { label: "Last 7 days", value: "lastWeek" },
   ];
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const req = await fetch(`/api/analytics`);
+      const res = await req.json();
+      if (res) {
+        setRows(res.data);
+      }
+      console.log(res);
+    };
+    fetchProducts();
+  }, []);
 
   return (
     <>

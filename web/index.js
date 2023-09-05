@@ -145,7 +145,7 @@ app.post(
 app.use(cors());
 app.use(express.json());
 app.use(fileUpload());
-
+console.log("host--", process.env.HOST);
 const getMeta = async (session, id) => {
   const products = await shopify.api.rest.Metafield.all({
     session,
@@ -154,15 +154,22 @@ const getMeta = async (session, id) => {
       owner_resource: "variants",
     },
   });
+  const obj = {
+    footValue: 0,
+    price: 0,
+  };
   const co2footprints = products.data?.find((x) => x.key === "co2");
   const co2compensation = products.data?.find(
     (x) => x.key === "co2compensation"
   );
   console.log("metafield data=>", co2footprints, co2compensation);
-  if (co2compensation) {
-    return Number(JSON.parse(co2compensation?.value).amount);
+  if (co2footprints) {
+    obj.footValue = Number(co2footprints?.value);
   }
-  return 0;
+  if (co2compensation) {
+    obj.price = Number(JSON.parse(co2compensation?.value).amount);
+  }
+  return obj;
 };
 
 const getVariant = async (session, id, cartPrice) => {
@@ -219,13 +226,14 @@ app.post("/api/getAppStatus", async (req, res) => {
       accessToken: findShop?.storetoken,
     };
     let total = 0;
+    let obj;
     // get meta data Price
     for (const productId in ids) {
       console.log("==>", productId);
       //-------------------
-      const price = await getMeta(session, productId);
-      console.log(price);
-      total += price * ids[productId];
+      obj = await getMeta(session, productId);
+      console.log(obj.price);
+      total += obj.price * ids[productId];
     }
     // updating checkbox price in html
     const dom = new jsdom.JSDOM(findShop?.html);
@@ -245,6 +253,7 @@ app.post("/api/getAppStatus", async (req, res) => {
       responseBody.price = cartVariant?.price;
       responseBody.cartVariantId = cartVariant?.id;
       responseBody.prop = cartVariant?.title;
+      responseBody.footvalue = obj?.footValue;
     }
 
     res.status(200).json(responseBody);

@@ -8,23 +8,23 @@ const storeSchema = new mongoose.Schema({
     type: String,
   },
   onboarding: {
-    type: Boolean
+    type: Boolean,
   },
   appStatus: {
-    type: Boolean
+    type: Boolean,
   },
   sub: {
-    type: Object
+    type: Object,
   },
   html: {
-    type: String
+    type: String,
   },
   design: {
-    type: Object
+    type: Object,
   },
   productId: {
-    type: String
-  }
+    type: String,
+  },
 });
 
 export default mongoose.model("store", storeSchema);

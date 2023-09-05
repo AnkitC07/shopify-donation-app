@@ -10,7 +10,7 @@ const addStore = async (shopName, storetoken) => {
         storetoken: storetoken,
         onboarding: true,
         appStatus: false,
-        sub: '',
+        sub: "",
         html: `<div id="checkbox_div" class="checkbox_wrapper" style="position: relative; display: flex; justify-content: end;">
           <div class="left_checkbox"
               style="display: inline-flex; align-items: center; gap: 10px; border: 1px solid rgb(209, 209, 209); padding: 10px 15px; background: rgb(255, 255, 255); color: rgb(0, 0, 0);">
@@ -45,12 +45,12 @@ const addStore = async (shopName, storetoken) => {
           </div>
       </div>`,
         design: {
-          fontFamily: 'default',
-          fontColor: '#000000',
-          borderColor: '#d1d1d1'
+          "font-family": "default",
+          color: "#000000",
+          "font-family": "#d1d1d1",
         },
-        productId: ''
-      },);
+        productId: "",
+      });
       return data;
     } else {
       await Stores.findOneAndUpdate(
@@ -62,8 +62,7 @@ const addStore = async (shopName, storetoken) => {
         }
       );
     }
-  } catch (error) {
-  }
+  } catch (error) {}
 };
 
 // export const getTimeAndDate = () => {
@@ -103,7 +102,7 @@ export const updateId = async (shopName, sub) => {
     findShop.sub = sub;
     return await findShop.save();
   } catch (error) {
-    console.log('Error in Update Sub Id', error)
+    console.log("Error in Update Sub Id", error);
   }
 };
 export const updateAppStatus = async (shopName, status) => {
@@ -117,7 +116,7 @@ export const updateAppStatus = async (shopName, status) => {
     findShop.appStatus = status;
     return await findShop.save();
   } catch (error) {
-    console.log('Error in Update App Status ', error)
+    console.log("Error in Update App Status ", error);
   }
 };
 export const updateHtml = async (shopName, html, design) => {
@@ -132,7 +131,7 @@ export const updateHtml = async (shopName, html, design) => {
     findShop.design = design;
     return await findShop.save();
   } catch (error) {
-    console.log('Error in Update HTML ', error)
+    console.log("Error in Update HTML ", error);
   }
 };
 
@@ -147,7 +146,7 @@ export const updateStore = async (shopName) => {
     findShop.onboarding = false;
     await findShop.save();
   } catch (error) {
-    console.log("Error in Update Store/onboarding", error)
+    console.log("Error in Update Store/onboarding", error);
   }
 };
 export const updateProductId = async (shopName, id) => {
@@ -161,7 +160,7 @@ export const updateProductId = async (shopName, id) => {
     findShop.productId = id;
     await findShop.save();
   } catch (error) {
-    console.log("Error in Update Store/onboarding", error)
+    console.log("Error in Update Store/onboarding", error);
   }
 };
 

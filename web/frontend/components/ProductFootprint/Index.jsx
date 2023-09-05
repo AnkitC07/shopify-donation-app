@@ -10,12 +10,13 @@ const Index = () => {
   const fetch = useAuthenticatedFetch();
   const [exptloading, exptloadingState] = useState(false);
   const sortIcon = <Icon source={SortMinor} color="base" />;
+  const [rows, setRows] = useState([]);
   // Table Data
-  const rows = [
-    ["Sustainable T-shirt", "4352-1823-1291", "4.32"],
-    ["Sustainable T-shirt", "4352-1823-1291", "6.45"],
-    ["Sustainable T-shirt", "4352-1823-1291", "8.22"],
-  ];
+  // const rows = [
+  //   ["Sustainable T-shirt", "4352-1823-1291", "4.32"],
+  //   ["Sustainable T-shirt", "4352-1823-1291", "6.45"],
+  //   ["Sustainable T-shirt", "4352-1823-1291", "8.22"],
+  // ];
   const headings = ["Product name", "SKU", "CO2 Footprint (kg CO2e)"];
   const cols = ["text", "text", "numeric"];
 
@@ -27,6 +28,9 @@ const Index = () => {
       const req = await fetch(`/api/product-footprint`);
       const res = await req.json();
       const products = res.products;
+      if (products) {
+        setRows(products);
+      }
       console.log(products);
     };
     fetchProducts();

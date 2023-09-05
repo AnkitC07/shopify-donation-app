@@ -18,6 +18,7 @@
     "bottleneck": "^2.19.5",
     "compression": "^1.7.4",
     "cross-env": "^7.0.3",
+    "express-async-handler": "^1.2.0",
     "express-fileupload": "^1.4.0",
     "jsdom": "^22.1.0",
     "node-fetch": "^3.3.2",

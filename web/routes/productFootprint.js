@@ -92,12 +92,28 @@ prodFootprint.get("/product-footprint", async (req, res) => {
     console.log(session);
     const products = await fetchProductsWithMetafields(session);
     console.log("Products=>", products);
-    res.status(200).json({ products: products });
+    res.status(200).json({ products: formateProductFootprint(products) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ status: 500, msg: "Internal server error" });
   }
 });
+
+function formateProductFootprint(jsonData) {
+  const formattedData = [];
+
+  jsonData.forEach((item) => {
+    const productName = item.node.title;
+    const variants = item.node.variants.edges;
+
+    variants.forEach((variant) => {
+      const sku = variant.node.sku || "N/A";
+      const co2FootprintValue = variant.node.metafields.edges[0].node.value;
+      formattedData.push([productName, sku, co2FootprintValue]);
+    });
+  });
+  return formattedData;
+}
 
 async function fetchProductsWithMetafields(session) {
   const query = `query {

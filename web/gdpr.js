@@ -1,4 +1,5 @@
 import { DeliveryMethod } from "@shopify/shopify-api";
+import { DataType } from "@shopify/shopify-api";
 import {
   getProductId,
   getStoreAccessToken,
@@ -9,16 +10,34 @@ import shopify from "./shopify.js";
 import Stores from "./model/Stores.js";
 import { createUsageRecord } from "./billing.js";
 
-const handleOrder = async (payload, shop) => {
-  let capacityReached = false;
+async function addTagToOrder(payload, shop, session) {
+  console.log("present");
+  const temptags = payload.tags;
+  const t = temptags.split(",");
+  t.push("co2compensation");
+  t.join(",");
 
-  console.log("Order update webhook paylaod", payload.line_items, shop);
-  // The order webhook payload you provided
-  const orderWebhookPayload = payload.line_items;
+  // method 1
+  const order = new shopify.api.rest.Order({ session: session });
+  order.id = payload.id;
+  order.tags = t;
+  await order.save({
+    update: true,
+  });
 
-  // Initialize a variable to store the total increased price
+  //method 2
+  // const client = new shopify.api.clients.Rest({ session });
+  // const data = await client.put({
+  //   path: "orders/" + payload.id,
+  //   data: { order: { id: payload.id, tags: t } },
+  //   type: DataType.JSON,
+  // });
+  // console.log("final tags-", data.tags);
+}
+
+async function IncreaseActiveCharge(orderWebhookPayload, store, session) {
   let totalIncreasedPrice = 0;
-
+  // Order Prices
   // Iterate through each line item
   orderWebhookPayload.forEach((lineItem) => {
     // Check if the line item has the desired property
@@ -38,33 +57,13 @@ const handleOrder = async (payload, shop) => {
   // Now you have the total increased price for the relevant line items
   console.log("Total Increased Price:", totalIncreasedPrice.toFixed(2)); // Rounding to 2 decimal places
 
-  const store = await Stores.findOne({ storename: shop });
   if (store) {
-    const session = {
-      shop: shop,
-      accessToken: store.storetoken,
-    };
-
-    // resp = await createUsageRecord(session, totalIncreasedPrice.toFixed(2));
-    // capacityReached = resp.capacityReached;
-    // if (capacityReached && !resp.createdRecord) {
-    //   console.log({
-    //     error: "Could not create record because capacity was reached",
-    //     status: 400,
-    //   });
-    // } else {
-    //   console.log({
-    //     success: true,
-    //     capacityReach: capacityReached,
-    //   });
-    // }
-
     // get list of reccuring charges
     const activeCharge = await shopify.api.rest.RecurringApplicationCharge.all({
       session: session,
     });
     console.log("active charge=>", activeCharge);
-
+    // Increase active
     const activeIds = activeCharge.data
       .filter((item) => item.status === "active")
       .map((item) => item.id);
@@ -76,11 +75,35 @@ const handleOrder = async (payload, shop) => {
       update: true,
     });
     console.log("charge updated=>", usage_charge);
-      
   }
+  return totalIncreasedPrice.toFixed(2);
+}
+
+const handleOrder = async (payload, shop) => {
+  // let capacityReached = false;
+
+  console.log("Order update webhook paylaod", payload, shop);
+  // The order webhook payload you provided
+  const orderWebhookPayload = payload.line_items;
+
+  // get store details
+  const store = await Stores.findOne({ storename: shop });
+  let session = {
+    shop: shop,
+    accessToken: store.storetoken,
+  };
+
+  // Increasing Active Charge
+  // let totalIncreasedPrice = await IncreaseActiveCharge(
+  //   orderWebhookPayload,
+  //   store,
+  //   session
+  // );
+  if (JSON.stringify(orderWebhookPayload).includes("co2-with-Emissa")) {
+    await addTagToOrder(payload, shop, session);
+  }
+  // Adding Tag
 };
-
-
 
 /**
  * @type {{[key: string]: import("@shopify/shopify-api").WebhookHandler}}
