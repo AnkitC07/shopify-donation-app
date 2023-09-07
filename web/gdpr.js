@@ -9,9 +9,11 @@ import { removeProduct } from "./Product/product.js";
 import shopify from "./shopify.js";
 import Stores from "./model/Stores.js";
 import { createUsageRecord } from "./billing.js";
+import Order from "./model/Order.js";
 
+// Add tag to order
 async function addTagToOrder(payload, shop, session) {
-  console.log("present");
+  console.log("adding tag");
   const temptags = payload.tags;
   const t = temptags.split(",");
   t.push("co2compensation");
@@ -32,60 +34,109 @@ async function addTagToOrder(payload, shop, session) {
   //   data: { order: { id: payload.id, tags: t } },
   //   type: DataType.JSON,
   // });
-  // console.log("final tags-", data.tags);
+  console.log("tag added");
 }
 
+async function addToDB(obj, store) {
+  console.log("add to db:", obj, store);
+  // Define the shop identifier
+  const shopIdentifier = store.storename; // Replace with the actual shop identifier
+
+  // Define the new order data
+  const newOrderData = {
+    co2Added: obj.co2FootprintValue,
+    amountAdded: obj.currentPrice,
+    feeAdded: obj.fee,
+    orderDate: new Date(),
+  };
+
+  try {
+    const foundOrder = await Order.findOne({ shop: shopIdentifier }).exec();
+
+    if (foundOrder) {
+      foundOrder.totalCount += 1;
+      foundOrder.totalCo2 += Number(newOrderData.co2FootprintValue);
+      foundOrder.totalAmount += Number(newOrderData.amountAdded);
+      foundOrder.totalFee += Number(newOrderData.feeAdded);
+      foundOrder.orders.push(newOrderData);
+
+      const updatedOrder = await foundOrder.save();
+      console.log("Updated order for shop:", updatedOrder);
+    } else {
+      console.log(`Shop ${shopIdentifier} not found.`);
+    }
+  } catch (error) {
+    console.error("Error with database:", error);
+  }
+}
+
+// Increase Active Charge
 async function IncreaseActiveCharge(orderWebhookPayload, store, session) {
-  let totalIncreasedPrice = 0;
-  // Order Prices
-  // Iterate through each line item
-  orderWebhookPayload.forEach((lineItem) => {
-    // Check if the line item has the desired property
+  let co2TotalPrice = 0;
+
+  for (const lineItem of orderWebhookPayload) {
     const co2Property = lineItem.properties.find(
       (property) =>
         property.name === "lable" && property.value === "co2-with-Emissa"
     );
     if (co2Property) {
-      // Convert the price to a number and calculate the increased price with a 25% increment
       const currentPrice = parseFloat(lineItem.price);
-      const increasedPrice = currentPrice * 1.25;
 
-      // Add the increased price to the total
-      totalIncreasedPrice += increasedPrice;
+      const co2FootprintValue =
+        lineItem.properties.find((property) => property.name === "footprint")
+          ?.value || null;
+      const fee = currentPrice * 0.25;
+      const obj = {
+        co2FootprintValue: co2FootprintValue,
+        currentPrice: currentPrice,
+        fee: fee,
+      };
+
+      await addToDB(obj, store);
+
+      co2TotalPrice += currentPrice * 1.25;
     }
-  });
-  // Now you have the total increased price for the relevant line items
-  console.log("Total Increased Price:", totalIncreasedPrice.toFixed(2)); // Rounding to 2 decimal places
+  }
+
+  console.log("Total Increased Price:", co2TotalPrice.toFixed(2));
 
   if (store) {
-    // get list of reccuring charges
-    const activeCharge = await shopify.api.rest.RecurringApplicationCharge.all({
-      session: session,
-    });
-    console.log("active charge=>", activeCharge);
-    // Increase active
-    const activeIds = activeCharge.data
-      .filter((item) => item.status === "active")
-      .map((item) => item.id);
-    const usage_charge = new shopify.api.rest.UsageCharge({ session: session });
-    usage_charge.recurring_application_charge_id = activeIds;
-    usage_charge.description = "Co2 Compensation " + totalIncreasedPrice;
-    usage_charge.price = totalIncreasedPrice;
-    await usage_charge.save({
-      update: true,
-    });
-    console.log("charge updated=>", usage_charge);
+    try {
+      const activeCharge =
+        await shopify.api.rest.RecurringApplicationCharge.all({
+          session: session,
+        });
+
+      const active = activeCharge.data.find((item) => item.status === "active");
+
+      if (
+        active &&
+        Number(active.balance_used) + co2TotalPrice <
+          Number(active.capped_amount)
+      ) {
+        const usage_charge = new shopify.api.rest.UsageCharge({
+          session: session,
+        });
+
+        usage_charge.recurring_application_charge_id = active.id;
+        usage_charge.description = "Co2 Compensation " + co2TotalPrice;
+        usage_charge.price = co2TotalPrice;
+
+        await usage_charge.save({ update: true });
+        console.log("Charge updated:", usage_charge);
+        return true;
+      }
+    } catch (error) {
+      console.error("Error with Shopify API:", error);
+    }
   }
-  return totalIncreasedPrice.toFixed(2);
+  return false;
 }
 
+// Order Webhook handler
 const handleOrder = async (payload, shop) => {
-  // let capacityReached = false;
-
   console.log("Order update webhook paylaod", payload, shop);
-  // The order webhook payload you provided
   const orderWebhookPayload = payload.line_items;
-
   // get store details
   const store = await Stores.findOne({ storename: shop });
   let session = {
@@ -93,16 +144,21 @@ const handleOrder = async (payload, shop) => {
     accessToken: store.storetoken,
   };
 
-  // Increasing Active Charge
-  // let totalIncreasedPrice = await IncreaseActiveCharge(
-  //   orderWebhookPayload,
-  //   store,
-  //   session
-  // );
   if (JSON.stringify(orderWebhookPayload).includes("co2-with-Emissa")) {
+    // Increasing Active Charge
+    let IncreaseChargeResponse = await IncreaseActiveCharge(
+      orderWebhookPayload,
+      store,
+      session
+    );
+    if (!IncreaseChargeResponse) {
+      console.log("Reached Charge Limit");
+    }
+    // Adding Tag
     await addTagToOrder(payload, shop, session);
+    // Adding to DB
+    // await addToDB()
   }
-  // Adding Tag
 };
 
 /**
@@ -193,7 +249,12 @@ export default {
     callbackUrl: "/api/webhooks",
     callback: async (topic, shop, body, webhookId) => {
       const payload = JSON.parse(body);
-      handleOrder(payload, shop);
+      try {
+        handleOrder(payload, shop);
+      } catch (error) {
+        console.log("Error order webhook =", error.message);
+      }
+
       // console.log('Order update webhook items', payload.line_items)
     },
   },

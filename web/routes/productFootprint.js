@@ -90,9 +90,18 @@ prodFootprint.get("/product-footprint", async (req, res) => {
   try {
     const session = res.locals.shopify.session;
     console.log(session);
-    const products = await fetchProductsWithMetafields(session);
+    const cursor = req.query.cursor;
+    const direction = req.query.direction;
+    const { products, pageInfo } = await fetchProductsWithMetafields(
+      session,
+      cursor,
+      direction
+    );
     console.log("Products=>", products);
-    res.status(200).json({ products: formateProductFootprint(products) });
+    res.status(200).json({
+      products: formateProductFootprint(products),
+      pageInfo: pageInfo,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ status: 500, msg: "Internal server error" });
@@ -115,9 +124,22 @@ function formateProductFootprint(jsonData) {
   return formattedData;
 }
 
-async function fetchProductsWithMetafields(session) {
+async function fetchProductsWithMetafields(
+  session,
+  cursor = null,
+  direction = null
+) {
+  console.log("fetching", cursor, direction, typeof direction);
+  const pageSize = 3;
+  const paginationArgument =
+    direction != "null"
+      ? direction === "next"
+        ? `after: "${cursor || ""}", first: ${pageSize}`
+        : `before: "${cursor || ""}", last: ${pageSize}`
+      : `first:${pageSize}`;
+  console.log(paginationArgument);
   const query = `query {
-    products(first: 10, query: "tag:'co2compensation'") {
+    products(${paginationArgument}, query: "tag:'co2compensation'") {
       edges {
         node {
           id
@@ -141,26 +163,35 @@ async function fetchProductsWithMetafields(session) {
           }
         }
       }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
     }
 }`;
-  console.log(session.shop);
-  let requestOptions = {
-    method: "POST",
-    headers: {
-      "X-Shopify-Access-Token": `${session.accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ query }),
-    redirect: "follow",
-  };
+  console.log(query);
   try {
+    let requestOptions = {
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": `${session.accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query }),
+      redirect: "follow",
+    };
     const request = await fetch(
       `https://${session.shop}/admin/api/2023-04/graphql.json`,
       requestOptions
     );
     const result = await request.json();
-    // console.log("result in graphql api", result.data.productVariants.edges)
-    return result.data.products.edges;
+    console.log("result:", JSON.parse(JSON.stringify(result)));
+    // Extract products and pagination info
+    const products = result?.data?.products?.edges;
+    const pageInfo = result?.data?.products?.pageInfo;
+    return { products, pageInfo };
   } catch (err) {
     console.log("error in graphql api", err);
     return err;

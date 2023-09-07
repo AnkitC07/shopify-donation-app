@@ -1,4 +1,11 @@
-import { Button, Divider, Icon, Page, Text } from "@shopify/polaris";
+import {
+  Button,
+  Divider,
+  Icon,
+  Page,
+  Pagination,
+  Text,
+} from "@shopify/polaris";
 import React, { useEffect, useRef, useState } from "react";
 import { SortMinor } from "@shopify/polaris-icons";
 import DataTableCommon from "../Common/DataTableCommon";
@@ -10,31 +17,50 @@ const Index = () => {
   const fetch = useAuthenticatedFetch();
   const [exptloading, exptloadingState] = useState(false);
   const sortIcon = <Icon source={SortMinor} color="base" />;
+  // Table states
   const [rows, setRows] = useState([]);
-  // Table Data
-  // const rows = [
-  //   ["Sustainable T-shirt", "4352-1823-1291", "4.32"],
-  //   ["Sustainable T-shirt", "4352-1823-1291", "6.45"],
-  //   ["Sustainable T-shirt", "4352-1823-1291", "8.22"],
-  // ];
+  const [cursor, setCursor] = useState(null);
+  const [hasNextPage, setHasNextPage] = useState(true);
+  const [hasPrevPage, setHasPrevPage] = useState(false);
+
   const headings = ["Product name", "SKU", "CO2 Footprint (kg CO2e)"];
   const cols = ["text", "text", "numeric"];
 
   const [selectedFile, setSelectedFile] = useState(null);
   const fileInputRef = useRef(null);
+  const fetchProducts = async (currentCursor = null, direction = null) => {
+    const req = await fetch(
+      `/api/product-footprint?cursor=${
+        currentCursor || ""
+      }&direction=${direction}`
+    );
+
+    const res = await req.json();
+    const products = res.products;
+    const pageInfo = res.pageInfo;
+    if (products) {
+      setRows(products);
+      // Update cursor and hasNextPage based on pageInfo
+      setCursor(pageInfo);
+      setHasNextPage(pageInfo.hasNextPage || false);
+      setHasPrevPage(pageInfo.hasPreviousPage || false);
+    }
+    console.log(res);
+  };
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      const req = await fetch(`/api/product-footprint`);
-      const res = await req.json();
-      const products = res.products;
-      if (products) {
-        setRows(products);
-      }
-      console.log(products);
-    };
     fetchProducts();
   }, []);
+  const handleNextPageClick = () => {
+    if (hasNextPage) {
+      fetchProducts(cursor.endCursor, "next");
+    }
+  };
+  const handlePrevPageClick = () => {
+    if (hasPrevPage) {
+      fetchProducts(cursor.startCursor, "before");
+    }
+  };
 
   // FILE IMPORT
   const handleFileChange = (event) => {
@@ -117,7 +143,6 @@ const Index = () => {
     a.click();
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
-    console.log(products);
     exptloadingState(false);
   };
 
@@ -184,7 +209,31 @@ const Index = () => {
                 <Button primary>Save</Button>
               </div>
             </div>
-            <DataTableCommon rows={rows} headings={headings} cols={cols} />
+            <div
+              className="collected_contribution"
+              style={{ backgroundColor: "#f9fafb", marginBottom: "30px" }}
+            >
+              <DataTableCommon rows={rows} headings={headings} cols={cols} />
+              <div
+                style={{
+                  padding: "25px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "10px",
+                }}
+              >
+                <Pagination
+                  hasPrevious={hasPrevPage}
+                  onPrevious={() => {
+                    handlePrevPageClick();
+                  }}
+                  hasNext={hasNextPage}
+                  onNext={() => {
+                    handleNextPageClick();
+                  }}
+                />
+              </div>
+            </div>
           </div>
         </Page>
       </div>

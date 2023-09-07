@@ -145,6 +145,7 @@ app.post(
 app.use(cors());
 app.use(express.json());
 app.use(fileUpload());
+
 console.log("host--", process.env.HOST);
 const getMeta = async (session, id) => {
   const products = await shopify.api.rest.Metafield.all({
@@ -202,6 +203,7 @@ const getVariant = async (session, id, cartPrice) => {
   return closestVariant;
 };
 
+// Theme Extension
 app.post("/api/getAppStatus", async (req, res) => {
   // const session = res.locals.shopify.session;
   res.setHeader("Access-Control-Allow-Origin", `*`);
@@ -226,6 +228,7 @@ app.post("/api/getAppStatus", async (req, res) => {
       accessToken: findShop?.storetoken,
     };
     let total = 0;
+    let totalFootvalue = 0;
     let obj;
     // get meta data Price
     for (const productId in ids) {
@@ -234,6 +237,7 @@ app.post("/api/getAppStatus", async (req, res) => {
       obj = await getMeta(session, productId);
       console.log(obj.price);
       total += obj.price * ids[productId];
+      totalFootvalue += obj.footValue * ids[productId];
     }
     // updating checkbox price in html
     const dom = new jsdom.JSDOM(findShop?.html);
@@ -253,7 +257,7 @@ app.post("/api/getAppStatus", async (req, res) => {
       responseBody.price = cartVariant?.price;
       responseBody.cartVariantId = cartVariant?.id;
       responseBody.prop = cartVariant?.title;
-      responseBody.footvalue = obj?.footValue;
+      responseBody.footvalue = totalFootvalue;
     }
 
     res.status(200).json(responseBody);

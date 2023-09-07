@@ -12,12 +12,15 @@ import React, { useCallback, useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import DataTableCommon from "../Common/DataTableCommon";
 import { useAuthenticatedFetch } from "../../hooks";
+import { exportFunc } from "../Common/functions";
 
 const Index = () => {
   const fetch = useAuthenticatedFetch();
 
   const [selected, setSelected] = useState("today");
   const [rows, setRows] = useState([]);
+  const [rows2, setRows2] = useState([]);
+  const [exptloading, exptloadingState] = useState(false);
 
   // Top Cards
   const impactCards = [
@@ -72,9 +75,6 @@ const Index = () => {
   ];
   const cols = ["text", "numeric", "numeric", "numeric", "numeric"];
 
-  // Second table Data
-  const rows2 = [];
-
   const handleSelectChange = useCallback((value) => setSelected(value), []);
 
   const options = [
@@ -89,6 +89,7 @@ const Index = () => {
       const res = await req.json();
       if (res) {
         setRows(res.data);
+        setRows2(res.collected);
       }
       console.log(res);
     };
@@ -106,7 +107,6 @@ const Index = () => {
             <div className="row">
               {impactCards.map(([title, button, text]) => (
                 <div className="col-md-3" style={{ marginTop: "10px" }}>
-                  {console.log(title)}
                   <LegacyCard
                     sectioned
                     title={title}
@@ -142,7 +142,13 @@ const Index = () => {
               <Text variant="headingMd" alignment="start" as="h5">
                 Customer Footprint Contributions
               </Text>
-              <Button primary>Export to CSV</Button>
+              <Button
+                primary
+                onClick={() => exportFunc(rows, headings, exptloadingState)}
+                loading={exptloading}
+              >
+                Export to CSV
+              </Button>
             </div>
             <DataTableCommon rows={rows} headings={headings} cols={cols} />
           </div>
