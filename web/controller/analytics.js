@@ -1,3 +1,4 @@
+import Order from "../model/Order.js";
 import Stores from "../model/Stores.js";
 import shopify from "../shopify.js";
 
@@ -10,7 +11,63 @@ export async function getSession(shop) {
   };
   return session;
 }
+// Function to calculate the total feeAdded for the current month
+function calculateTotalFeeAddedForCurrentMonth(orders) {
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth(); // Get the current month (0-11)
 
+  const totalFeeAdded = orders
+    .filter((order) => {
+      // Parse the order's orderDate and get its month
+      const orderDate = new Date(order.orderDate);
+      const orderMonth = orderDate.getMonth();
+
+      // Return true for orders in the current month
+      return orderMonth === currentMonth;
+    })
+    .reduce((total, order) => total + order.feeAdded, 0);
+
+  return totalFeeAdded;
+}
+
+// Stats API
+export async function getStats(req, res) {
+  const session = res.locals.shopify.session;
+  const data = await fetchStatsFromDB(session);
+  if (data) {
+    const monthFee = calculateTotalFeeAddedForCurrentMonth(data.orders);
+    res.status(200).json({
+      stats: data,
+      fee: monthFee,
+    });
+  } else {
+    res.status(500).json({ error: "Failed to retrieve data from db" });
+  }
+}
+// Super ADmin Stats API
+export async function getStatsSuper(req, res) {
+  const shop = req.query.shop;
+  const session = getSession(shop);
+  const data = await fetchStatsFromDB(session);
+  if (data) {
+    res.status(200).json({
+      stats: data,
+    });
+  } else {
+    res.status(500).json({ error: "Failed to retrieve data from db" });
+  }
+}
+
+// Fetch stats from db
+async function fetchStatsFromDB(session) {
+  try {
+    const orders = await Order.findOne({ shop: session.shop }).exec();
+    return orders;
+  } catch (error) {
+    console.error("Error fetching orders from the database:", error);
+    throw error; // You can handle the error as needed in your application
+  }
+}
 // Store API
 export async function getOrders(req, res) {
   const session = res.locals.shopify.session;
@@ -54,7 +111,7 @@ async function fetchorderFromShopify(session) {
       fields: "order_number,created_at,line_items,total-price,customer",
     },
   });
-  console.log(data.body);
+  console.log("shopify orders", data.body);
   return data;
 }
 // Formate data for order table

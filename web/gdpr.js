@@ -40,7 +40,7 @@ async function addTagToOrder(payload, shop, session) {
 async function addToDB(obj, store) {
   console.log("add to db:", obj, store);
   // Define the shop identifier
-  const shopIdentifier = store.storename; // Replace with the actual shop identifier
+  const shopIdentifier = store.storename;
 
   // Define the new order data
   const newOrderData = {
@@ -51,20 +51,28 @@ async function addToDB(obj, store) {
   };
 
   try {
-    const foundOrder = await Order.findOne({ shop: shopIdentifier }).exec();
+    let foundOrder = await Order.findOne({ shop: shopIdentifier }).exec();
 
     if (foundOrder) {
       foundOrder.totalCount += 1;
-      foundOrder.totalCo2 += Number(newOrderData.co2FootprintValue);
+      foundOrder.totalCo2 += Number(newOrderData.co2Added);
       foundOrder.totalAmount += Number(newOrderData.amountAdded);
       foundOrder.totalFee += Number(newOrderData.feeAdded);
       foundOrder.orders.push(newOrderData);
-
-      const updatedOrder = await foundOrder.save();
-      console.log("Updated order for shop:", updatedOrder);
     } else {
       console.log(`Shop ${shopIdentifier} not found.`);
+      foundOrder = new Order({
+        shop: shopIdentifier,
+        totalCount: 1,
+        totalCo2: Number(newOrderData.co2Added),
+        totalAmount: Number(newOrderData.amountAdded),
+        totalFee: Number(newOrderData.feeAdded),
+        orders: [newOrderData],
+      });
     }
+    console.log("order update=>", foundOrder);
+    const updatedOrder = await foundOrder.save();
+    console.log("Updated order for shop:", updatedOrder);
   } catch (error) {
     console.error("Error with database:", error);
   }

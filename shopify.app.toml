@@ -2,7 +2,7 @@
 
 name = "emissa_donation_app"
 client_id = "8e23c89439aa9e2d4bcfd466dbaa2b48"
-application_url = "https://tender-enabling-physically-gaps.trycloudflare.com"
+application_url = "https://ahead-sherman-costa-latex.trycloudflare.com"
 embedded = true
 
 [access_scopes]
@@ -12,9 +12,9 @@ use_legacy_install_flow = true
 
 [auth]
 redirect_urls = [
-  "https://tender-enabling-physically-gaps.trycloudflare.com/auth/callback",
-  "https://tender-enabling-physically-gaps.trycloudflare.com/auth/shopify/callback",
-  "https://tender-enabling-physically-gaps.trycloudflare.com/api/auth/callback"
+  "https://ahead-sherman-costa-latex.trycloudflare.com/auth/callback",
+  "https://ahead-sherman-costa-latex.trycloudflare.com/auth/shopify/callback",
+  "https://ahead-sherman-costa-latex.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
