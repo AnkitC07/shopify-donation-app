@@ -29,6 +29,7 @@ export async function getHomeData(req, res) {
       let totalLastMonthAmount = 0;
       let totalLastMonthCo2 = 0;
       let totalThisMonthFeeAdded = 0;
+      let currency = "";
 
       // Define date ranges for last month and this month
       const currentDate = new Date();
@@ -54,6 +55,7 @@ export async function getHomeData(req, res) {
         let totalFeeAdded = 0;
         if (data && data.orders?.length > 0) {
           totalFeeAdded = calculateTotalFeeAddedForCurrentMonth(data.orders);
+          currency = data.currency;
           totalThisMonthFeeAdded += totalFeeAdded;
         }
         // Calculate totals for last month based on order dates
@@ -88,6 +90,7 @@ export async function getHomeData(req, res) {
           totalLastMonthAmount: totalLastMonthAmount,
           totalLastMonthCo2: totalLastMonthCo2,
           totalThisMonthFeeAdded: totalThisMonthFeeAdded,
+          currency: currency,
         },
       });
     } else {

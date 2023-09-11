@@ -15,6 +15,7 @@ import { SearchMajor, SortMinor } from "@shopify/polaris-icons";
 import DataTableCommon from "../../components/DataTableCommon";
 import "./index.css";
 import api from "../../../appConfig";
+import getSymbolFromCurrency from "currency-symbol-map";
 
 function Dashboard() {
   const [rows, setRows] = useState([]);
@@ -26,6 +27,7 @@ function Dashboard() {
     totalCo2: 0,
     totalAmount: 0,
     totalFee: 0,
+    currency: "",
   });
 
   const fetchHomeData = async () => {
@@ -44,6 +46,7 @@ function Dashboard() {
           totalCo2: data.stats.totalLastMonthCo2,
           totalAmount: data.stats.totalLastMonthAmount,
           totalFee: data.stats.totalThisMonthFeeAdded,
+          currency: getSymbolFromCurrency(data.stats.currency),
         });
       }
       console.log("Home data=>", data);
@@ -94,7 +97,8 @@ function Dashboard() {
       "",
       <div style={{ display: "flex", alignItems: "baseline" }}>
         <Text variant="heading2xl" as="h3">
-          €{stats.totalAmount}
+          {stats.currency}
+          {stats.totalAmount}
         </Text>
       </div>,
     ],
@@ -104,7 +108,8 @@ function Dashboard() {
       "",
       <div style={{ display: "flex", alignItems: "baseline" }}>
         <Text variant="heading2xl" as="h3">
-          €{stats.totalFee}
+          {stats.currency}
+          {stats.totalFee}
         </Text>
       </div>,
     ],
@@ -116,15 +121,17 @@ function Dashboard() {
       const storeDetails = [
         `www.${storeDomain}.com`,
         item.totalCount,
-        `€${item.totalAmount}`,
+        `${item.totalAmount}`,
         `€${item.totalFeeAdded}`,
         <a
-          href="#"
+          href={`https://${item.storename}/`}
+          target="blank"
           style={{
             color: "rgb(36, 99, 188)",
             textDecoration: "none",
             cursor: "pointer",
           }}
+          rel="noreferrer"
         >
           Go to store
         </a>,

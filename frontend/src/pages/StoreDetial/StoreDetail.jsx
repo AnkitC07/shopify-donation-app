@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-key */
 import {
   Button,
   DataTable,
@@ -10,10 +11,11 @@ import {
   Select,
   Text,
 } from "@shopify/polaris";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { NavLink, useNavigate, useNavigation } from "react-router-dom";
 import DataTableCommon from "../../components/DataTableCommon";
 import "./index.css";
+import api from "../../../appConfig";
 
 const StoreDetail = () => {
   const queryString = window.location.search;
@@ -23,6 +25,25 @@ const StoreDetail = () => {
   const navigate = useNavigate();
   const [selected, setSelected] = useState("today");
 
+  const [rows, setRows] = useState([]);
+  // const [rows2, setRows2] = useState([]);
+  const [stats, setStats] = useState({
+    totalCount: 0,
+    totalCo2: 0,
+    totalAmount: 0,
+    totalFee: 0,
+    currency: "",
+  });
+
+  function displayWeight(weightInKg) {
+    if (weightInKg >= 1000) {
+      const weightInTon = weightInKg / 1000;
+      return { co2: weightInTon, unit: "ton CO2" };
+    } else {
+      return { co2: weightInKg, unit: "kg CO2" };
+    }
+  }
+
   // Top Cards
   const impactCards = [
     [
@@ -30,7 +51,7 @@ const StoreDetail = () => {
       "",
       <div style={{ display: "flex", alignItems: "baseline" }}>
         <Text variant="heading2xl" as="h3">
-          4032{" "}
+          {stats.totalCount}{" "}
         </Text>
         <span style={{ marginLeft: "4px", fontSize: "13px" }}>clicks</span>
       </div>,
@@ -40,9 +61,12 @@ const StoreDetail = () => {
       "",
       <div style={{ display: "flex", alignItems: "baseline" }}>
         <Text variant="heading2xl" as="h3">
-          1.32{" "}
+          {displayWeight(stats.totalCo2).co2}{" "}
         </Text>
-        <span style={{ marginLeft: "4px", fontSize: "13px" }}>tons CO2</span>
+        <span style={{ marginLeft: "4px", fontSize: "13px" }}>
+          {" "}
+          {displayWeight(stats.totalCo2).unit}
+        </span>
       </div>,
     ],
     [
@@ -50,7 +74,7 @@ const StoreDetail = () => {
       "",
       <div style={{ display: "flex", alignItems: "baseline" }}>
         <Text variant="heading2xl" as="h3">
-          €1,321.21
+          €{stats.totalAmount}
         </Text>
       </div>,
     ],
@@ -60,21 +84,13 @@ const StoreDetail = () => {
       "",
       <div style={{ display: "flex", alignItems: "baseline" }}>
         <Text variant="heading2xl" as="h3">
-          €21.17
+          €{stats.totalFee}
         </Text>
       </div>,
     ],
   ];
 
   // Table Data
-  const rows = [
-    ["# 1234", "12-06-2023", 4.32, "€2", "€130.00"],
-    ["# 1234", "12-06-2023", 4.32, "€2", "€110.00"],
-    ["# 2341", "12-06-2023", 4.32, "€2", "€108.00"],
-    ["# 1234", "12-06-2023", 4.32, "€2", "€130.00"],
-    ["# 1234", "12-06-2023", 4.32, "€2", "€110.00"],
-    ["# 2341", "12-06-2023", 4.32, "€2", "€108.00"],
-  ];
   const headings = [
     "Order id",
     "Date",
@@ -112,6 +128,52 @@ const StoreDetail = () => {
 
   const handleActionClick = useCallback(() => {
     navigate("/");
+  }, []);
+
+  // Fetching table data
+  const fetchOrders = async () => {
+    try {
+      const req = await fetch(`${api}/api/analytics/super?shop=${shop}`);
+      if (!req.ok) {
+        throw new Error(`Failed to get data.`);
+      }
+      const res = await req.json();
+      if (res) {
+        setRows(res.data);
+        // setRows2(res.collected);
+      }
+      console.log("Table API=>", res);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  // Fetching analytics data
+  const fetchAnalytics = async () => {
+    try {
+      const req = await fetch(`${api}/api/analytics/stats/super?shop=${shop}`);
+      if (!req.ok) {
+        throw new Error(`Failed to get data.`);
+      }
+      const res = await req.json();
+      if (res) {
+        const stats = res.stats;
+        const fee = res.fee;
+        setStats({
+          totalCount: stats.totalCount ?? 0,
+          totalCo2: stats.totalCo2 ?? 0,
+          totalAmount: stats.totalAmount ?? 0,
+          totalFee: fee ?? 0,
+        });
+      }
+      console.log("Stats API=>", res);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+    fetchAnalytics();
   }, []);
   return (
     <>
