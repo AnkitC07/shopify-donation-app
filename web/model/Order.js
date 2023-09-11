@@ -7,6 +7,7 @@ const orderSchema = new mongoose.Schema({
   totalCo2: Number,
   totalAmount: Number,
   totalFee: Number,
+  currency: String,
   orders: [
     {
       co2Added: Number,

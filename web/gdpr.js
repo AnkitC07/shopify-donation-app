@@ -37,8 +37,8 @@ async function addTagToOrder(payload, shop, session) {
   console.log("tag added");
 }
 
-async function addToDB(obj, store) {
-  console.log("add to db:", obj, store);
+async function addToDB(obj, store, curr) {
+  console.log("add to db:", obj, store, curr);
   // Define the shop identifier
   const shopIdentifier = store.storename;
 
@@ -67,10 +67,10 @@ async function addToDB(obj, store) {
         totalCo2: Number(newOrderData.co2Added),
         totalAmount: Number(newOrderData.amountAdded),
         totalFee: Number(newOrderData.feeAdded),
+        currency: curr,
         orders: [newOrderData],
       });
     }
-    console.log("order update=>", foundOrder);
     const updatedOrder = await foundOrder.save();
     console.log("Updated order for shop:", updatedOrder);
   } catch (error) {
@@ -79,7 +79,7 @@ async function addToDB(obj, store) {
 }
 
 // Increase Active Charge
-async function IncreaseActiveCharge(orderWebhookPayload, store, session) {
+async function IncreaseActiveCharge(orderWebhookPayload, store, session, curr) {
   let co2TotalPrice = 0;
 
   for (const lineItem of orderWebhookPayload) {
@@ -100,7 +100,7 @@ async function IncreaseActiveCharge(orderWebhookPayload, store, session) {
         fee: fee,
       };
 
-      await addToDB(obj, store);
+      await addToDB(obj, store, curr);
 
       co2TotalPrice += currentPrice * 1.25;
     }
@@ -143,7 +143,8 @@ async function IncreaseActiveCharge(orderWebhookPayload, store, session) {
 
 // Order Webhook handler
 const handleOrder = async (payload, shop) => {
-  console.log("Order update webhook paylaod", payload, shop);
+  let curr = payload.currency;
+  console.log("Order update webhook paylaod", payload, shop, curr);
   const orderWebhookPayload = payload.line_items;
   // get store details
   const store = await Stores.findOne({ storename: shop });
@@ -157,7 +158,8 @@ const handleOrder = async (payload, shop) => {
     let IncreaseChargeResponse = await IncreaseActiveCharge(
       orderWebhookPayload,
       store,
-      session
+      session,
+      curr
     );
     if (!IncreaseChargeResponse) {
       console.log("Reached Charge Limit");

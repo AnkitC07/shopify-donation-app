@@ -1,6 +1,7 @@
 import Order from "../model/Order.js";
 import Stores from "../model/Stores.js";
 import shopify from "../shopify.js";
+import getSymbolFromCurrency from "currency-symbol-map";
 
 // Session Function
 export async function getSession(shop) {
@@ -108,7 +109,8 @@ async function fetchorderFromShopify(session) {
     path: "orders",
     query: {
       tag: "co2compensation",
-      fields: "order_number,created_at,line_items,total-price,customer",
+      fields:
+        "order_number,created_at,line_items,total-price,customer,currency",
     },
   });
   console.log("shopify orders", data.body);
@@ -118,6 +120,7 @@ async function fetchorderFromShopify(session) {
 function formateOrderData(data) {
   console.log(data);
   const transformedData = data.map((order) => {
+    const currency = getSymbolFromCurrency(order.currency);
     const footprintReduction = order.line_items.find(
       (item) =>
         item.properties &&
@@ -140,7 +143,7 @@ function formateOrderData(data) {
             .value
         : "",
       footprintReduction ? footprintReduction.price : "",
-      `€${parseFloat(order.total_price).toFixed(2)}`,
+      `${currency}${parseFloat(order.total_price).toFixed(2)}`,
     ];
   });
   return transformedData;

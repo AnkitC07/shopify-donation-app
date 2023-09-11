@@ -8,6 +8,7 @@ import {
   Select,
   Text,
 } from "@shopify/polaris";
+import getSymbolFromCurrency from "currency-symbol-map";
 import React, { useCallback, useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import DataTableCommon from "../Common/DataTableCommon";
@@ -24,6 +25,7 @@ const Index = () => {
     totalCo2: 0,
     totalAmount: 0,
     totalFee: 0,
+    currency: "",
   });
   const [exptloading, exptloadingState] = useState(false);
 
@@ -65,7 +67,8 @@ const Index = () => {
       "View report",
       <div style={{ display: "flex", alignItems: "baseline" }}>
         <Text variant="heading2xl" as="h3">
-          €{stats.totalAmount}
+          {stats.currency}
+          {stats.totalAmount}
         </Text>
       </div>,
     ],
@@ -74,7 +77,8 @@ const Index = () => {
       "View report",
       <div style={{ display: "flex", alignItems: "baseline" }}>
         <Text variant="heading2xl" as="h3">
-          €{stats.totalFee}
+          {stats.currency}
+          {stats.totalFee}
         </Text>
       </div>,
     ],
@@ -121,6 +125,7 @@ const Index = () => {
         totalCo2: stats.totalCo2,
         totalAmount: stats.totalAmount,
         totalFee: fee,
+        currency: getSymbolFromCurrency(stats.currency),
       });
     }
     console.log(res);

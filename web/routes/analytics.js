@@ -12,8 +12,8 @@ const app = express();
 const analyticRouter = express.Router();
 
 analyticRouter.get("/analytics", asyncHandler(getOrders));
-analyticRouter.get("/analytics/super", asyncHandler(getOrdersSuper));
+// analyticRouter.get("/analytics/super", asyncHandler(getOrdersSuper));
 analyticRouter.get("/analytics/stats", asyncHandler(getStats));
-analyticRouter.get("/analytics/stats/super", asyncHandler(getStatsSuper));
+// analyticRouter.get("/analytics/stats/super", asyncHandler(getStatsSuper));
 
 export default analyticRouter;

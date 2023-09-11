@@ -24,6 +24,7 @@
     "@shopify/i18next-shopify": "0.2.0",
     "@shopify/polaris": "^10.49.1",
     "@vitejs/plugin-react": "1.2.0",
+    "currency-symbol-map": "^5.1.0",
     "dotenv": "^16.3.1",
     "i18next": "^22.4.11",
     "i18next-resources-to-backend": "^1.1.3",
