@@ -28,6 +28,7 @@ const Index = () => {
 
   const [selectedFile, setSelectedFile] = useState(null);
   const fileInputRef = useRef(null);
+
   const fetchProducts = async (currentCursor = null, direction = null) => {
     const req = await fetch(
       `/api/product-footprint?cursor=${
@@ -146,7 +147,6 @@ const Index = () => {
     exptloadingState(false);
   };
 
- 
   return (
     <>
       <div className="container-fluid page_margin">

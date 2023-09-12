@@ -72,13 +72,15 @@ async function fetchStatsFromDB(session) {
 // Store API
 export async function getOrders(req, res) {
   const session = res.locals.shopify.session;
-  console.log("analytics", session);
-  const data = await fetchorderFromShopify(session);
+  const cursor = req.query.cursor;
+  // console.log("analytics", session);
+  const { data, pageInfo } = await fetchorderFromShopify(session, cursor);
   if (data) {
     res.status(200).json({
       data: formateOrderData(data.body.orders),
       collected: formateCollectedContributions(data.body.orders),
       order: data,
+      pageInfo: pageInfo,
     });
   } else {
     res.status(500).json({ error: "Failed to retrieve data" });
@@ -103,22 +105,37 @@ export async function getOrdersSuper(req, res) {
 }
 
 // Fetch orders of store
-async function fetchorderFromShopify(session) {
-  const client = new shopify.api.clients.Rest({ session });
-  const data = await client.get({
-    path: "orders",
-    query: {
+async function fetchorderFromShopify(session, cursor = null) {
+  // check is it is initial fetch or pagination fetch
+  let query;
+  if (cursor != "null") {
+    query = {
+      limit: 1,
+      fields:
+        "order_number,created_at,line_items,total-price,customer,currency",
+      page_info: cursor,
+    };
+  } else {
+    query = {
+      limit: 1,
       tag: "co2compensation",
       fields:
         "order_number,created_at,line_items,total-price,customer,currency",
-    },
+    };
+  }
+  // console.log("query:", query);
+  const client = new shopify.api.clients.Rest({ session });
+  const data = await client.get({
+    path: "orders",
+    query: query,
   });
-  console.log("shopify orders", data.body);
-  return data;
+  console.log("shopify orders", data.pageInfo);
+  return { data, pageInfo: data.pageInfo };
 }
+
 // Formate data for order table
-function formateOrderData(data) {
-  console.log(data);
+export function formateOrderData(data) {
+  // console.log(data);
   const transformedData = data.map((order) => {
     const currency = getSymbolFromCurrency(order.currency);
     const footprintReduction = order.line_items.find(
@@ -142,7 +159,7 @@ function formateOrderData(data) {
         ? co2FootPrint.properties.find((prop) => prop.name === "footprint")
             .value
         : "",
-      footprintReduction ? footprintReduction.price : "",
+      footprintReduction ? `${currency}${footprintReduction.price}` : "",
       `${currency}${parseFloat(order.total_price).toFixed(2)}`,
     ];
   });
@@ -151,7 +168,7 @@ function formateOrderData(data) {
 
 // Formate data for Collected Contributions table
 function formateCollectedContributions(data) {
-  console.log(data);
+  // console.log(data);
   const transformedData = data.map((order) => {
     return [
       `# ${order.order_number}`,

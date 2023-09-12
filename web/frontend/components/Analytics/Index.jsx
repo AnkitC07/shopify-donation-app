@@ -14,6 +14,7 @@ import { NavLink } from "react-router-dom";
 import DataTableCommon from "../Common/DataTableCommon";
 import { useAuthenticatedFetch } from "../../hooks";
 import { exportFunc } from "../Common/functions";
+import axios from "axios";
 
 const Index = () => {
   const fetch = useAuthenticatedFetch();
@@ -28,7 +29,9 @@ const Index = () => {
     currency: "",
   });
   const [exptloading, exptloadingState] = useState(false);
-
+  // pagination states
+  const [hasNextPage, setHasNextPage] = useState(true);
+  const [hasPrevPage, setHasPrevPage] = useState(false);
   function displayWeight(weightInKg) {
     if (weightInKg >= 1000) {
       const weightInTon = weightInKg / 1000;
@@ -104,12 +107,15 @@ const Index = () => {
   ];
 
   // Fetching table data
-  const fetchOrders = async () => {
-    const req = await fetch(`/api/analytics`);
+  const fetchOrders = async (cursor = null) => {
+    const req = await fetch(`/api/analytics?cursor=${cursor}`);
     const res = await req.json();
     if (res) {
       setRows(res.data);
       setRows2(res.collected);
+      // Update cursor and hasNextPage based on pageInfo
+      setHasNextPage(res.pageInfo?.nextPage?.query?.page_info || false);
+      setHasPrevPage(res.pageInfo?.prevPage?.query?.page_info || false);
     }
     console.log(res);
   };
@@ -134,6 +140,36 @@ const Index = () => {
     fetchOrders();
     fetchAnalytics();
   }, []);
+  const handleNextPageClick = () => {
+    if (hasNextPage) {
+      fetchOrders(hasNextPage);
+    }
+  };
+  const handlePrevPageClick = () => {
+    if (hasPrevPage) {
+      fetchOrders(hasPrevPage);
+    }
+  };
+  const ExportOrders = async () => {
+    let since_id = 0;
+    const orders = [];
+    exptloadingState(true);
+    while (since_id !== null) {
+      const req = await fetch(`/api/exportOrders?since_id=${since_id}`);
+      const res = await req.json();
+      console.log("export response", res);
+      if (!res?.status) {
+        since_id = res.since_id;
+        console.log(since_id);
+        orders.push(...res.orders);
+      } else {
+        exptloadingState(false);
+        break;
+      }
+    }
+    console.log("final orders", orders);
+    exportFunc(orders, headings, exptloadingState);
+  };
 
   return (
     <>
@@ -146,22 +182,7 @@ const Index = () => {
             <div className="row">
               {impactCards.map(([title, button, text]) => (
                 <div className="col-md-3" style={{ marginTop: "10px" }}>
-                  <LegacyCard
-                    sectioned
-                    title={title}
-                    // actions={[
-                    //   {
-                    //     content: (
-                    //       <NavLink
-                    //         to="/productFootprints"
-                    //         style={{ color: "#2463bc" }}
-                    //       >
-                    //         {button}
-                    //       </NavLink>
-                    //     ),
-                    //   },
-                    // ]}
-                  >
+                  <LegacyCard sectioned title={title}>
                     {text}
                   </LegacyCard>
                 </div>
@@ -183,13 +204,37 @@ const Index = () => {
               </Text>
               <Button
                 primary
-                onClick={() => exportFunc(rows, headings, exptloadingState)}
+                onClick={() => ExportOrders()}
                 loading={exptloading}
               >
                 Export to CSV
               </Button>
             </div>
-            <DataTableCommon rows={rows} headings={headings} cols={cols} />
+            <div
+              className="collected_contribution"
+              style={{ backgroundColor: "#f9fafb", marginBottom: "30px" }}
+            >
+              <DataTableCommon rows={rows} headings={headings} cols={cols} />
+              <div
+                style={{
+                  padding: "25px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "10px",
+                }}
+              >
+                <Pagination
+                  hasPrevious={hasPrevPage}
+                  onPrevious={() => {
+                    handlePrevPageClick();
+                  }}
+                  hasNext={hasNextPage}
+                  onNext={() => {
+                    handleNextPageClick();
+                  }}
+                />
+              </div>
+            </div>
           </div>
           <div
             className="collected_contribution"

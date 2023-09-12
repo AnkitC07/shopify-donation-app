@@ -7,6 +7,8 @@ import {
   getStats,
   getStatsSuper,
 } from "../controller/analytics.js";
+import axios from "axios";
+import shopify from "../shopify.js";
 
 const app = express();
 const analyticRouter = express.Router();
