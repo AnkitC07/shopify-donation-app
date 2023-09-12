@@ -16,6 +16,8 @@ import { NavLink, useNavigate, useNavigation } from "react-router-dom";
 import DataTableCommon from "../../components/DataTableCommon";
 import "./index.css";
 import api from "../../../appConfig";
+import getSymbolFromCurrency from "currency-symbol-map";
+import { exportFunc } from "../../components/functions";
 
 const StoreDetail = () => {
   const queryString = window.location.search;
@@ -34,6 +36,10 @@ const StoreDetail = () => {
     totalFee: 0,
     currency: "",
   });
+  const [exptloading, exptloadingState] = useState(false);
+  // pagination states
+  const [hasNextPage, setHasNextPage] = useState(true);
+  const [hasPrevPage, setHasPrevPage] = useState(false);
 
   function displayWeight(weightInKg) {
     if (weightInKg >= 1000) {
@@ -74,7 +80,8 @@ const StoreDetail = () => {
       "",
       <div style={{ display: "flex", alignItems: "baseline" }}>
         <Text variant="heading2xl" as="h3">
-          €{stats.totalAmount}
+          {stats.currency}
+          {stats.totalAmount}
         </Text>
       </div>,
     ],
@@ -84,7 +91,8 @@ const StoreDetail = () => {
       "",
       <div style={{ display: "flex", alignItems: "baseline" }}>
         <Text variant="heading2xl" as="h3">
-          €{stats.totalFee}
+          {stats.currency}
+          {stats.totalFee}
         </Text>
       </div>,
     ],
@@ -118,29 +126,34 @@ const StoreDetail = () => {
   ];
   const cols2 = ["text", "text", "text", "numeric", "numeric"];
 
-  const handleSelectChange = useCallback((value) => setSelected(value), []);
+  // const handleSelectChange = useCallback((value) => setSelected(value), []);
 
-  const options = [
-    { label: "Period", value: "period" },
-    { label: "Yesterday", value: "yesterday" },
-    { label: "Last 7 days", value: "lastWeek" },
-  ];
+  // const options = [
+  //   { label: "Period", value: "period" },
+  //   { label: "Yesterday", value: "yesterday" },
+  //   { label: "Last 7 days", value: "lastWeek" },
+  // ];
 
   const handleActionClick = useCallback(() => {
     navigate("/");
   }, []);
 
   // Fetching table data
-  const fetchOrders = async () => {
+  const fetchOrders = async (cursor = null) => {
+    console.log("cursor=>", cursor);
     try {
-      const req = await fetch(`${api}/api/analytics/super?shop=${shop}`);
+      const req = await fetch(
+        `${api}/api/analytics/super?shop=${shop}&cursor=${cursor}`
+      );
       if (!req.ok) {
         throw new Error(`Failed to get data.`);
       }
       const res = await req.json();
       if (res) {
         setRows(res.data);
-        // setRows2(res.collected);
+        // Update cursor and hasNextPage based on pageInfo
+        setHasNextPage(res.next || false);
+        setHasPrevPage(res.prev || false);
       }
       console.log("Table API=>", res);
     } catch (error) {
@@ -163,6 +176,7 @@ const StoreDetail = () => {
           totalCo2: stats.totalCo2 ?? 0,
           totalAmount: stats.totalAmount ?? 0,
           totalFee: fee ?? 0,
+          currency: getSymbolFromCurrency(stats.currency),
         });
       }
       console.log("Stats API=>", res);
@@ -175,6 +189,39 @@ const StoreDetail = () => {
     fetchOrders();
     fetchAnalytics();
   }, []);
+
+  const handleNextPageClick = () => {
+    if (hasNextPage) {
+      fetchOrders(hasNextPage);
+    }
+  };
+  const handlePrevPageClick = () => {
+    if (hasPrevPage) {
+      fetchOrders(hasPrevPage);
+    }
+  };
+  const ExportOrders = async () => {
+    let since_id = 0;
+    const orders = [];
+    exptloadingState(true);
+    while (since_id !== null) {
+      const req = await fetch(
+        `${api}/api/exportOrders?shop=${shop}&since_id=${since_id}`
+      );
+      const res = await req.json();
+      console.log("export response", res);
+      if (!res?.status) {
+        since_id = res.since_id;
+        console.log(since_id);
+        orders.push(...res.orders);
+      } else {
+        exptloadingState(false);
+        break;
+      }
+    }
+    console.log("final orders", orders);
+    exportFunc(orders, headings, exptloadingState);
+  };
   return (
     <>
       <div className="container-fluid page_margin">
@@ -247,25 +294,55 @@ const StoreDetail = () => {
               </div>
               <div
                 className="col-sm-4"
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  flexWrap: "wrap",
-                }}
+                // style={{
+                //   display: "flex",
+                //   justifyContent: "space-between",
+                //   flexWrap: "wrap",
+                // }}
               >
-                <div className="select-export-wrapper" style={{ width: "70%" }}>
-                  <Select
+                {/* <div className="select-export-wrapper" style={{ width: "70%" }}> */}
+                {/* <Select
                     options={options}
                     onChange={handleSelectChange}
                     value={selected}
-                  />
-                </div>
-                <div style={{ textAlign: "center" }}>
-                  <Button primary>Export to CSV</Button>
+                  /> */}
+                {/* </div> */}
+                <div style={{ textAlign: "end" }}>
+                  <Button
+                    primary
+                    onClick={() => ExportOrders()}
+                    loading={exptloading}
+                  >
+                    Export to CSV
+                  </Button>
                 </div>
               </div>
             </div>
-            <DataTableCommon rows={rows} headings={headings} cols={cols} />
+            <div
+              className="collected_contribution"
+              style={{ backgroundColor: "#f9fafb", marginBottom: "30px" }}
+            >
+              <DataTableCommon rows={rows} headings={headings} cols={cols} />
+              <div
+                style={{
+                  padding: "25px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "10px",
+                }}
+              >
+                <Pagination
+                  hasPrevious={hasPrevPage}
+                  onPrevious={() => {
+                    handlePrevPageClick();
+                  }}
+                  hasNext={hasNextPage}
+                  onNext={() => {
+                    handleNextPageClick();
+                  }}
+                />
+              </div>
+            </div>
           </div>
           <div className="billing-history_table" style={{ margin: "40px 0px" }}>
             <div

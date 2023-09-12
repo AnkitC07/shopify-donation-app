@@ -5,6 +5,7 @@ import {
   calculateTotalFeeAddedForCurrentMonth,
   fetchStatsFromDB,
 } from "./analytics.js";
+import getSymbolFromCurrency from "currency-symbol-map";
 
 export async function getHomeData(req, res) {
   try {
@@ -55,7 +56,7 @@ export async function getHomeData(req, res) {
         let totalFeeAdded = 0;
         if (data && data.orders?.length > 0) {
           totalFeeAdded = calculateTotalFeeAddedForCurrentMonth(data.orders);
-          currency = data.currency;
+          currency = getSymbolFromCurrency(data.currency);
           totalThisMonthFeeAdded += totalFeeAdded;
         }
         // Calculate totals for last month based on order dates
@@ -79,6 +80,7 @@ export async function getHomeData(req, res) {
           totalCount: data?.totalCount ? data?.totalCount : 0,
           totalAmount: data?.totalAmount ? data?.totalAmount : 0,
           totalFeeAdded: totalFeeAdded,
+          currency: currency,
         });
       }
 
@@ -90,7 +92,6 @@ export async function getHomeData(req, res) {
           totalLastMonthAmount: totalLastMonthAmount,
           totalLastMonthCo2: totalLastMonthCo2,
           totalThisMonthFeeAdded: totalThisMonthFeeAdded,
-          currency: currency,
         },
       });
     } else {

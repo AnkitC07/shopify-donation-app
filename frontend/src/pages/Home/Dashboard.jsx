@@ -46,7 +46,6 @@ function Dashboard() {
           totalCo2: data.stats.totalLastMonthCo2,
           totalAmount: data.stats.totalLastMonthAmount,
           totalFee: data.stats.totalThisMonthFeeAdded,
-          currency: getSymbolFromCurrency(data.stats.currency),
         });
       }
       console.log("Home data=>", data);
@@ -97,7 +96,6 @@ function Dashboard() {
       "",
       <div style={{ display: "flex", alignItems: "baseline" }}>
         <Text variant="heading2xl" as="h3">
-          {stats.currency}
           {stats.totalAmount}
         </Text>
       </div>,
@@ -108,7 +106,6 @@ function Dashboard() {
       "",
       <div style={{ display: "flex", alignItems: "baseline" }}>
         <Text variant="heading2xl" as="h3">
-          {stats.currency}
           {stats.totalFee}
         </Text>
       </div>,
@@ -122,7 +119,7 @@ function Dashboard() {
         `www.${storeDomain}.com`,
         item.totalCount,
         `${item.totalAmount}`,
-        `€${item.totalFeeAdded}`,
+        `${item.currency}${item.totalFeeAdded}`,
         <a
           href={`https://${item.storename}/`}
           target="blank"
