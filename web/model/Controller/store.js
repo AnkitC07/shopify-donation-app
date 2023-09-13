@@ -1,17 +1,17 @@
 import Stores from "../Stores.js";
 
 const addStore = async (shopName, storetoken) => {
-  try {
-    const findShop = await Stores.findOne({ storename: shopName });
+    try {
+        const findShop = await Stores.findOne({ storename: shopName });
 
-    if (!findShop) {
-      const data = await Stores.create({
-        storename: shopName,
-        storetoken: storetoken,
-        onboarding: true,
-        appStatus: false,
-        sub: "",
-        html: `<div id="checkbox_div" class="checkbox_wrapper" style="position: relative; display: flex; justify-content: end;">
+        if (!findShop) {
+            const data = await Stores.create({
+                storename: shopName,
+                storetoken: storetoken,
+                onboarding: true,
+                appStatus: false,
+                sub: "",
+                html: `<div id="checkbox_div" class="checkbox_wrapper" style="position: relative; display: flex; justify-content: end;">
           <div class="left_checkbox"
               style="display: inline-flex; align-items: center; gap: 10px; border: 1px solid rgb(209, 209, 209); padding: 10px 15px; background: rgb(255, 255, 255); color: rgb(0, 0, 0);">
               <svg width="36" height="36" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -44,25 +44,26 @@ const addStore = async (shopName, storetoken) => {
                       id="reduce" style="accent-color: rgb(90, 157, 118); margin-left: 5px; height: 24px; width: 15px;"></div>
           </div>
       </div>`,
-        design: {
-          "font-family": "default",
-          color: "#000000",
-          "font-family": "#d1d1d1",
-        },
-        productId: "",
-      });
-      return data;
-    } else {
-      await Stores.findOneAndUpdate(
-        {
-          storename: shopName,
-        },
-        {
-          storetoken: storetoken,
+                design: {
+                    "font-family": "default",
+                    color: "#000000",
+                    "border-color": "#d1d1d1",
+                },
+                productId: "",
+                password: "",
+            });
+            return data;
+        } else {
+            await Stores.findOneAndUpdate(
+                {
+                    storename: shopName,
+                },
+                {
+                    storetoken: storetoken,
+                }
+            );
         }
-      );
-    }
-  } catch (error) {}
+    } catch (error) {}
 };
 
 // export const getTimeAndDate = () => {
@@ -92,100 +93,100 @@ const addStore = async (shopName, storetoken) => {
 //   return formattedDateTime
 // }
 export const updateId = async (shopName, sub) => {
-  try {
-    let findShop = await Stores.findOne({ storename: shopName });
+    try {
+        let findShop = await Stores.findOne({ storename: shopName });
 
-    if (!findShop) {
-      return;
+        if (!findShop) {
+            return;
+        }
+
+        findShop.sub = sub;
+        return await findShop.save();
+    } catch (error) {
+        console.log("Error in Update Sub Id", error);
     }
-
-    findShop.sub = sub;
-    return await findShop.save();
-  } catch (error) {
-    console.log("Error in Update Sub Id", error);
-  }
 };
 export const updateAppStatus = async (shopName, status) => {
-  try {
-    let findShop = await Stores.findOne({ storename: shopName });
+    try {
+        let findShop = await Stores.findOne({ storename: shopName });
 
-    if (!findShop) {
-      return;
+        if (!findShop) {
+            return;
+        }
+
+        findShop.appStatus = status;
+        return await findShop.save();
+    } catch (error) {
+        console.log("Error in Update App Status ", error);
     }
-
-    findShop.appStatus = status;
-    return await findShop.save();
-  } catch (error) {
-    console.log("Error in Update App Status ", error);
-  }
 };
 export const updateHtml = async (shopName, html, design) => {
-  try {
-    let findShop = await Stores.findOne({ storename: shopName });
+    try {
+        let findShop = await Stores.findOne({ storename: shopName });
 
-    if (!findShop) {
-      return;
+        if (!findShop) {
+            return;
+        }
+
+        findShop.html = html;
+        findShop.design = design;
+        return await findShop.save();
+    } catch (error) {
+        console.log("Error in Update HTML ", error);
     }
-
-    findShop.html = html;
-    findShop.design = design;
-    return await findShop.save();
-  } catch (error) {
-    console.log("Error in Update HTML ", error);
-  }
 };
 
 export const updateStore = async (shopName) => {
-  try {
-    let findShop = await Stores.findOne({ storename: shopName });
+    try {
+        let findShop = await Stores.findOne({ storename: shopName });
 
-    if (!findShop) {
-      return;
+        if (!findShop) {
+            return;
+        }
+
+        findShop.onboarding = false;
+        await findShop.save();
+    } catch (error) {
+        console.log("Error in Update Store/onboarding", error);
     }
-
-    findShop.onboarding = false;
-    await findShop.save();
-  } catch (error) {
-    console.log("Error in Update Store/onboarding", error);
-  }
 };
 export const updateProductId = async (shopName, id) => {
-  try {
-    let findShop = await Stores.findOne({ storename: shopName });
+    try {
+        let findShop = await Stores.findOne({ storename: shopName });
 
-    if (!findShop) {
-      return;
+        if (!findShop) {
+            return;
+        }
+
+        findShop.productId = id;
+        await findShop.save();
+    } catch (error) {
+        console.log("Error in Update Store/onboarding", error);
     }
-
-    findShop.productId = id;
-    await findShop.save();
-  } catch (error) {
-    console.log("Error in Update Store/onboarding", error);
-  }
 };
 
 export const getStoreAccessToken = async (shopName) => {
-  console.log(shopName, "getStoreAccessToken function");
-  try {
-    const findShop = await Stores.findOne({ storename: shopName });
-    console.log(findShop);
-    return {
-      shop: findShop.storename,
-      accessToken: findShop.storetoken,
-    };
-  } catch (error) {
-    console.log(error);
-  }
+    console.log(shopName, "getStoreAccessToken function");
+    try {
+        const findShop = await Stores.findOne({ storename: shopName });
+        console.log(findShop);
+        return {
+            shop: findShop.storename,
+            accessToken: findShop.storetoken,
+        };
+    } catch (error) {
+        console.log(error);
+    }
 };
 export const getProductId = async (shopName) => {
-  console.log(shopName, "getProductId function");
-  try {
-    const findShop = await Stores.findOne({ storename: shopName });
-    console.log(findShop);
-    return findShop.productId;
-  } catch (error) {
-    console.log(error);
-  }
+    console.log(shopName, "getProductId function");
+    try {
+        const findShop = await Stores.findOne({ storename: shopName });
+        console.log(findShop);
+        return findShop.productId;
+    } catch (error) {
+        console.log(error);
+    }
 };
 
 export default addStore;

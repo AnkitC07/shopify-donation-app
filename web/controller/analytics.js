@@ -110,14 +110,14 @@ async function fetchorderFromShopify(session, cursor = null) {
   let query;
   if (cursor != "null") {
     query = {
-      limit: 1,
+      limit: 10,
       fields:
         "order_number,created_at,line_items,total-price,customer,currency",
       page_info: cursor,
     };
   } else {
     query = {
-      limit: 1,
+      limit: 10,
       tag: "co2compensation",
       fields:
         "order_number,created_at,line_items,total-price,customer,currency",
@@ -129,7 +129,7 @@ async function fetchorderFromShopify(session, cursor = null) {
     path: "orders",
     query: query,
   });
-  console.log("shopify orders", data.pageInfo);
+  console.log("shopify page info", data.pageInfo);
   return { data, pageInfo: data.pageInfo };
 }
 
@@ -174,8 +174,8 @@ function formateCollectedContributions(data) {
       `# ${order.order_number}`,
       order.customer.last_name,
       order.customer.email,
-      "",
-      "",
+      "NA",
+      "NA",
       order.created_at.split("T")[0],
     ];
   });

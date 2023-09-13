@@ -25,6 +25,9 @@ const storeSchema = new mongoose.Schema({
   productId: {
     type: String,
   },
+  password: {
+    type: String,
+  },
 });
 
 export default mongoose.model("store", storeSchema);

@@ -49,6 +49,7 @@ export const defaultHtml = `<div id="checkbox_div" class="checkbox_wrapper" styl
 export const MainContextProvider = ({ children }) => {
   const [enabled, setEnabled] = useState(false);
   const [password, setPassword] = useState("");
+  const [isActive, setIsActive] = useState(true);
   const [analytics, setAnalytics] = useState(defaultAnalytics);
   const [design, setDesign] = useState(defaultDesign);
   const [html, setHtml] = useState(defaultHtml);
@@ -71,6 +72,8 @@ export const MainContextProvider = ({ children }) => {
         setHtml,
         onboardingScreen,
         setOnboarding,
+        isActive,
+        setIsActive,
       }}
     >
       {children}
