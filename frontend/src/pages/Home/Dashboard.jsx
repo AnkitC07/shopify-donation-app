@@ -299,19 +299,19 @@ function Dashboard() {
                 <LegacyCard
                   sectioned
                   title={title}
-                  actions={[
-                    {
-                      content: (
-                        <NavLink
-                          to="/productFootprints"
-                          style={{ color: "#2463bc" }}
-                        >
-                          {" "}
-                          {button}{" "}
-                        </NavLink>
-                      ),
-                    },
-                  ]}
+                  // actions={[
+                  //   {
+                  //     content: (
+                  //       <NavLink
+                  //         to="/productFootprints"
+                  //         style={{ color: "#2463bc" }}
+                  //       >
+                  //         {" "}
+                  //         {button}{" "}
+                  //       </NavLink>
+                  //     ),
+                  //   },
+                  // ]}
                 >
                   {text}
                 </LegacyCard>

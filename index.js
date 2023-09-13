@@ -9,7 +9,6 @@ import dotenv from "dotenv";
 import EI from "./routes/exportImportPro.js";
 dotenv.config();
 
-console.log(process.env.HOST);
 const app = express();
 app.use(express.json());
 app.use(Cors());
