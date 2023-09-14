@@ -59,6 +59,7 @@ async function addToDB(obj, store, curr) {
             console.log(`Shop ${shopIdentifier} not found.`);
             foundOrder = new Order({
                 shop: shopIdentifier,
+                date: new Date(),
                 totalCount: 1,
                 totalCo2: Number(newOrderData.co2Added),
                 totalAmount: Number(newOrderData.amountAdded),
@@ -87,7 +88,7 @@ async function IncreaseActiveCharge(orderWebhookPayload, store, session, curr) {
 
             const co2FootprintValue =
                 lineItem.properties.find((property) => property.name === "footprint")?.value || null;
-            const fee = currentPrice * 0.25;
+            const fee = 0.25;
             const obj = {
                 co2FootprintValue: co2FootprintValue,
                 currentPrice: currentPrice,
@@ -96,7 +97,7 @@ async function IncreaseActiveCharge(orderWebhookPayload, store, session, curr) {
 
             await addToDB(obj, store, curr);
 
-            co2TotalPrice += currentPrice * 1.25;
+            co2TotalPrice += currentPrice;
         }
     }
 
@@ -110,7 +111,7 @@ async function IncreaseActiveCharge(orderWebhookPayload, store, session, curr) {
 
             const active = activeCharge.data.find((item) => item.status === "active");
 
-            if (active && Number(active.balance_used) + co2TotalPrice < Number(active.capped_amount)) {
+            if (active && Number(active.balance_used) + 0.25 < Number(active.capped_amount)) {
                 const usage_charge = new shopify.api.rest.UsageCharge({
                     session: session,
                 });
@@ -250,6 +251,22 @@ export default {
             }
 
             // console.log('Order update webhook items', payload.line_items)
+        },
+    },
+    SUBSCRIPTION_BILLING_ATTEMPTS_SUCCESS: {
+        deliveryMethod: DeliveryMethod.Http,
+        callbackUrl: "/api/webhooks",
+        callback: async (topic, shop, body, webhookId) => {
+            const payload = JSON.parse(body);
+            console.log("SUBSCRIPTION_BILLING_ATTEMPTS_SUCCESS =>", payload);
+        },
+    },
+    APP_SUBSCRIPTIONS_UPDATE: {
+        deliveryMethod: DeliveryMethod.Http,
+        callbackUrl: "/api/webhooks",
+        callback: async (topic, shop, body, webhookId) => {
+            const payload = JSON.parse(body);
+            console.log("APP_SUBSCRIPTIONS_UPDATE =>", payload);
         },
     },
 

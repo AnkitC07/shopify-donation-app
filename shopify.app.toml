@@ -2,19 +2,19 @@
 
 name = "emissa_donation_app"
 client_id = "8e23c89439aa9e2d4bcfd466dbaa2b48"
-application_url = "https://messages-cambodia-cruz-packed.trycloudflare.com"
+application_url = "https://acres-teen-index-valuation.trycloudflare.com"
 embedded = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_products,read_orders,write_orders,read_customers,write_metaobject_definitions,read_metaobjects,write_metaobjects"
+scopes = "write_products,read_orders,write_orders,read_customers,write_metaobject_definitions,read_metaobjects,write_metaobjects,"
 use_legacy_install_flow = true
 
 [auth]
 redirect_urls = [
-  "https://messages-cambodia-cruz-packed.trycloudflare.com/auth/callback",
-  "https://messages-cambodia-cruz-packed.trycloudflare.com/auth/shopify/callback",
-  "https://messages-cambodia-cruz-packed.trycloudflare.com/api/auth/callback"
+  "https://acres-teen-index-valuation.trycloudflare.com/auth/callback",
+  "https://acres-teen-index-valuation.trycloudflare.com/auth/shopify/callback",
+  "https://acres-teen-index-valuation.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

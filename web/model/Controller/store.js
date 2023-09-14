@@ -7,6 +7,7 @@ const addStore = async (shopName, storetoken) => {
         if (!findShop) {
             const data = await Stores.create({
                 storename: shopName,
+                date: new Date(),
                 storetoken: storetoken,
                 onboarding: true,
                 appStatus: false,

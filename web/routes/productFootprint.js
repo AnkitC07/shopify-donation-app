@@ -87,58 +87,51 @@ const prodFootprint = express.Router();
 // });
 
 prodFootprint.get("/product-footprint", async (req, res) => {
-  try {
-    const session = res.locals.shopify.session;
-    console.log(session);
-    const cursor = req.query.cursor;
-    const direction = req.query.direction;
-    const { products, pageInfo } = await fetchProductsWithMetafields(
-      session,
-      cursor,
-      direction
-    );
-    console.log("Products=>", products);
-    res.status(200).json({
-      products: formateProductFootprint(products),
-      pageInfo: pageInfo,
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ status: 500, msg: "Internal server error" });
-  }
+    try {
+        const session = res.locals.shopify.session;
+        console.log(session);
+        const cursor = req.query.cursor;
+        const direction = req.query.direction;
+        const { products, pageInfo } = await fetchProductsWithMetafields(session, cursor, direction);
+        console.log("Products=>", products);
+        res.status(200).json({
+            products: formateProductFootprint(products),
+            pageInfo: pageInfo,
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ status: 500, msg: "Internal server error" });
+    }
 });
 
 function formateProductFootprint(jsonData) {
-  const formattedData = [];
+    const formattedData = [];
 
-  jsonData.forEach((item) => {
-    const productName = item.node.title;
-    const variants = item.node.variants.edges;
-
-    variants.forEach((variant) => {
-      const sku = variant.node.sku || "N/A";
-      const co2FootprintValue = variant.node.metafields.edges[0].node.value;
-      formattedData.push([productName, sku, co2FootprintValue]);
+    jsonData.forEach((item) => {
+        const productName = item.node.title;
+        const variants = item.node.variants.edges;
+        variants.forEach((variant) => {
+            if (variant.node.metafields.edges.length > 0) {
+                const sku = variant.node.sku || "N/A";
+                const co2FootprintValue = variant.node?.metafields?.edges[0]?.node?.value;
+                formattedData.push([productName, sku, co2FootprintValue]);
+            }
+        });
     });
-  });
-  return formattedData;
+    return formattedData;
 }
 
-async function fetchProductsWithMetafields(
-  session,
-  cursor = null,
-  direction = null
-) {
-  console.log("fetching", cursor, direction, typeof direction);
-  const pageSize = 3;
-  const paginationArgument =
-    direction != "null"
-      ? direction === "next"
-        ? `after: "${cursor || ""}", first: ${pageSize}`
-        : `before: "${cursor || ""}", last: ${pageSize}`
-      : `first:${pageSize}`;
-  console.log(paginationArgument);
-  const query = `query {
+async function fetchProductsWithMetafields(session, cursor = null, direction = null) {
+    console.log("fetching", cursor, direction, typeof direction);
+    const pageSize = 10;
+    const paginationArgument =
+        direction != "null"
+            ? direction === "next"
+                ? `after: "${cursor || ""}", first: ${pageSize}`
+                : `before: "${cursor || ""}", last: ${pageSize}`
+            : `first:${pageSize}`;
+    console.log(paginationArgument);
+    const query = `query {
     products(${paginationArgument}, query: "tag:'co2compensation'") {
       edges {
         node {
@@ -171,100 +164,97 @@ async function fetchProductsWithMetafields(
       }
     }
 }`;
-  console.log(query);
-  try {
-    let requestOptions = {
-      method: "POST",
-      headers: {
-        "X-Shopify-Access-Token": `${session.accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ query }),
-      redirect: "follow",
-    };
-    const request = await fetch(
-      `https://${session.shop}/admin/api/2023-04/graphql.json`,
-      requestOptions
-    );
-    const result = await request.json();
-    console.log("result:", JSON.parse(JSON.stringify(result)));
-    // Extract products and pagination info
-    const products = result?.data?.products?.edges;
-    const pageInfo = result?.data?.products?.pageInfo;
-    return { products, pageInfo };
-  } catch (err) {
-    console.log("error in graphql api", err);
-    return err;
-  }
+    console.log(query);
+    try {
+        let requestOptions = {
+            method: "POST",
+            headers: {
+                "X-Shopify-Access-Token": `${session.accessToken}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ query }),
+            redirect: "follow",
+        };
+        const request = await fetch(`https://${session.shop}/admin/api/2023-04/graphql.json`, requestOptions);
+        const result = await request.json();
+        console.log("result:", JSON.parse(JSON.stringify(result)));
+        // Extract products and pagination info
+        const products = result?.data?.products?.edges;
+        const pageInfo = result?.data?.products?.pageInfo;
+        return { products, pageInfo };
+    } catch (err) {
+        console.log("error in graphql api", err);
+        return err;
+    }
 
-  // const client = new shopify.clients.Graphql({ session });
-  // const data = await client.query({
-  //   data: `query {
-  //       products(first: 100) {
-  //         edges {
-  //           node {
-  //             id
-  //             title
-  //             vendor
-  //             variants(first: 10) {
-  //               edges {
-  //                 node {
-  //                   id
-  //                   sku
-  //                   price
-  //                   metafields(first: 10) {
-  //                     edges {
-  //                       node {
-  //                         key
-  //                         value
-  //                       }
-  //                     }
-  //                   }
-  //                 }
-  //               }
-  //             }
-  //           }
-  //         }
-  //       }
-  //     }`,
-  // });
+    // const client = new shopify.clients.Graphql({ session });
+    // const data = await client.query({
+    //   data: `query {
+    //       products(first: 100) {
+    //         edges {
+    //           node {
+    //             id
+    //             title
+    //             vendor
+    //             variants(first: 10) {
+    //               edges {
+    //                 node {
+    //                   id
+    //                   sku
+    //                   price
+    //                   metafields(first: 10) {
+    //                     edges {
+    //                       node {
+    //                         key
+    //                         value
+    //                       }
+    //                     }
+    //                   }
+    //                 }
+    //               }
+    //             }
+    //           }
+    //         }
+    //       }
+    //     }`,
+    // });
 
-  // const productsWithMetafields = data.products.edges.map((productEdge) => {
-  //   const product = productEdge.node;
+    // const productsWithMetafields = data.products.edges.map((productEdge) => {
+    //   const product = productEdge.node;
 
-  //   if (product.vendor !== "Emissa") {
-  //     const validVariants = product.variants.edges
-  //       .map((variantEdge) => variantEdge.node)
-  //       .filter((variant) => {
-  //         const footprintsData = variant.metafields.edges.find(
-  //           (metafieldEdge) => metafieldEdge.node.key === "co2"
-  //         );
-  //         const compensationData = variant.metafields.edges.find(
-  //           (metafieldEdge) => metafieldEdge.node.key === "co2compensation"
-  //         );
-  //         return footprintsData && compensationData;
-  //       });
+    //   if (product.vendor !== "Emissa") {
+    //     const validVariants = product.variants.edges
+    //       .map((variantEdge) => variantEdge.node)
+    //       .filter((variant) => {
+    //         const footprintsData = variant.metafields.edges.find(
+    //           (metafieldEdge) => metafieldEdge.node.key === "co2"
+    //         );
+    //         const compensationData = variant.metafields.edges.find(
+    //           (metafieldEdge) => metafieldEdge.node.key === "co2compensation"
+    //         );
+    //         return footprintsData && compensationData;
+    //       });
 
-  //     if (validVariants.length > 0) {
-  //       return {
-  //         title: product.title,
-  //         product_id: product.id,
-  //         variants: validVariants.map((variant) => ({
-  //           variant_id: variant.id,
-  //           sku: variant.sku,
-  //           price: variant.price,
-  //           footprints: variant.metafields.edges.find(
-  //             (metafieldEdge) => metafieldEdge.node.key === "co2"
-  //           ).node.value,
-  //         })),
-  //       };
-  //     }
-  //   }
+    //     if (validVariants.length > 0) {
+    //       return {
+    //         title: product.title,
+    //         product_id: product.id,
+    //         variants: validVariants.map((variant) => ({
+    //           variant_id: variant.id,
+    //           sku: variant.sku,
+    //           price: variant.price,
+    //           footprints: variant.metafields.edges.find(
+    //             (metafieldEdge) => metafieldEdge.node.key === "co2"
+    //           ).node.value,
+    //         })),
+    //       };
+    //     }
+    //   }
 
-  //   return null;
-  // });
+    //   return null;
+    // });
 
-  // return productsWithMetafields.filter((product) => product !== null);
+    // return productsWithMetafields.filter((product) => product !== null);
 }
 
 export default prodFootprint;
