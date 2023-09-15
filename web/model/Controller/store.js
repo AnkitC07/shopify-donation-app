@@ -171,10 +171,13 @@ export const getStoreAccessToken = async (shopName) => {
     try {
         const findShop = await Stores.findOne({ storename: shopName });
         console.log(findShop);
-        return {
-            shop: findShop.storename,
-            accessToken: findShop.storetoken,
-        };
+        if (findShop) {
+            return {
+                shop: findShop.storename,
+                accessToken: findShop.storetoken,
+            };
+        }
+        return null;
     } catch (error) {
         console.log(error);
     }

@@ -278,10 +278,12 @@ export default {
             console.log("Uninstall=>", payload);
 
             const session = await getStoreAccessToken(shop);
-            const id = await getProductId(shop);
-            console.log("session", session, id);
-            // await removeProduct(session, id)
-            updateProductId(shop, "");
+            if (session !== null) {
+                const id = await getProductId(shop);
+                console.log("session", session, id);
+                // await removeProduct(session, id)
+                updateProductId(shop, "");
+            }
             // console.log('Order update webhook items', payload.line_items)
         },
     },

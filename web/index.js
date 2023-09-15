@@ -94,11 +94,62 @@ async function customDataMetafields(session) {
     return data;
 }
 // Set up Shopify authentication and webhook handling
+// app.use((req, res, next) => {
+//     console.log("checking as middlewear checkBeforeInstallation");
+//     if (req.shop.currency !== "EUR") {
+//         res.status(403).send("The shop must use Euro as currency to install this app.");
+//         return;
+//     }
+
+//     next();
+// })
+// console.log("shopiify==>", shopify);
+const unInstallStore = async (session) => {
+    const revokeUrl = `https://${session.shop}/admin/api_permissions/current.json`;
+
+    let myHeaders = new Headers();
+    myHeaders.append("X-Shopify-Access-Token", `${session.accessToken}`);
+    myHeaders.append("Content-Type", "application/json");
+    myHeaders.append("Accept", "application/json");
+
+    let requestOptions = {};
+    requestOptions.method = "DELETE";
+    requestOptions.headers = myHeaders;
+
+    try {
+        const result = await fetch(revokeUrl, requestOptions);
+        // const result = await request.json();
+        console.log("result after the store deletion--");
+        return result;
+    } catch (error) {
+        console.log("Errro in Deactivate", error);
+        throw new Error("Error in Deactivate");
+    }
+};
+
 app.get(shopify.config.auth.path, shopify.auth.begin());
 app.get(
     shopify.config.auth.callbackPath,
     shopify.auth.callback(),
     // Request payment if required
+    async (req, res, next) => {
+        console.log("checking the store currency");
+        const session = res.locals.shopify.session;
+        const shop = await shopify.api.rest.Shop.all({
+            session: session,
+        });
+        console.log(shop.data[0].currency);
+        if (shop.data[0].currency !== "EUR") {
+            await unInstallStore(session);
+            // res.status(403).send("The shop must have Euro currency to install this app.");
+            res.status(200)
+                .set("Content-Type", "text/html")
+                .send(readFileSync(join(STATIC_PATH, "error.html")));
+            return;
+        }
+
+        next();
+    },
     async (req, res, next) => {
         const plans = Object.keys(billingConfig);
         const session = res.locals.shopify.session;
@@ -442,8 +493,15 @@ app.get("/api/products/create", async (_req, res) => {
 
 app.use(shopify.cspHeaders());
 app.use(serveStatic(STATIC_PATH, { index: false }));
+// const checkBeforeInstallation = (req, res, next) => {
+//     const shopName = req.query.shop;
+//     console.log("shopiy=>", shopify);
+
+//     next();
+// };
 
 app.use("/*", shopify.ensureInstalledOnShop(), async (_req, res, _next) => {
+    console.log("checking ensureInstalledOnShop", _req);
     return res
         .status(200)
         .set("Content-Type", "text/html")

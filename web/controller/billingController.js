@@ -25,7 +25,17 @@ export async function fetchBillingFomDB(session) {
         if (!store || !store.date) {
             // Handle the case where the store or installation date is not found
             console.error("Store not found or installation date is missing.");
-            return [];
+            const formattedMonth = format(new Date(), "MMMM, yyyy");
+            return {
+                monthlyTotals: [
+                    {
+                        month: formattedMonth, // Subtract 1 from the month to ensure correct month indexing
+                        totalCount: 0,
+                        totalAmount: 0,
+                        totalFee: 0, // Set to 0 if totalFee is missing
+                    },
+                ],
+            };
         }
 
         const installationDate = store.date;
